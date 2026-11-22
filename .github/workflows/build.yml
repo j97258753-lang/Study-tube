@@ -4,13 +4,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Setup Java 17
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
-      - name: Accept Android SDK Licenses
-        run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
       - name: Generate Project & Build APK
         run: |
           mkdir -p app/src/main/java/com/studytube/app app/src/main/res/layout
@@ -27,6 +25,7 @@ jobs:
               repositories {
                   google()
                   mavenCentral()
+                  maven { url = uri("https://jitpack.io") }
               }
           }
           rootProject.name = "StudyTube"
@@ -58,23 +57,33 @@ jobs:
                   applicationId = "com.studytube.app"
                   minSdk = 24
                   targetSdk = 34
-                  versionCode = 1
-                  versionName = "1.0"
+                  versionCode = 4
+                  versionName = "4.0"
+                  multiDexEnabled = true
               }
               compileOptions {
+                  isCoreLibraryDesugaringEnabled = true
                   sourceCompatibility = JavaVersion.VERSION_17
                   targetCompatibility = JavaVersion.VERSION_17
               }
               kotlinOptions {
                   jvmTarget = "17"
               }
+              packaging {
+                  resources {
+                      excludes += "/META-INF/{AL2.0,LGPL2.1}"
+                  }
+              }
           }
           dependencies {
+              coreLibraryDesugaring("com.android.tools:desugar_jdk_libs_nio:2.0.4")
               implementation("androidx.core:core-ktx:1.12.0")
               implementation("androidx.appcompat:appcompat:1.6.1")
               implementation("com.google.android.material:material:1.11.0")
-              implementation("androidx.media3:media3-exoplayer:1.2.1")
-              implementation("androidx.media3:media3-ui:1.2.1")
+              implementation("androidx.media3:media3-exoplayer:1.3.1")
+              implementation("androidx.media3:media3-ui:1.3.1")
+              implementation("com.github.teamnewpipe:NewPipeExtractor:v0.27.1")
+              implementation("com.squareup.okhttp3:okhttp:4.12.0")
               implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
           }
           EOF
@@ -83,6 +92,7 @@ jobs:
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
               <uses-permission android:name="android.permission.INTERNET" />
+              <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
               <application
                   android:allowBackup="true"
                   android:label="StudyTube"
@@ -120,11 +130,12 @@ jobs:
                       android:layout_width="0dp"
                       android:layout_height="48dp"
                       android:layout_weight="1"
-                      android:hint="Search topic (e.g. Force Class 10 ICSE)..."
+                      android:hint="Search topic OR paste YouTube URL..."
                       android:textColor="#FFFFFF"
                       android:textColorHint="#888888"
                       android:background="#1E1E1E"
                       android:paddingHorizontal="12dp"
+                      android:singleLine="true"
                       android:imeOptions="actionSearch"
                       android:inputType="text" />
                   <Button
@@ -168,7 +179,7 @@ jobs:
                   android:id="@+id/statusText"
                   android:layout_width="match_parent"
                   android:layout_height="wrap_content"
-                  android:text="Search any study topic above to begin"
+                  android:text="Search any study topic or paste a YouTube link above"
                   android:textColor="#AAAAAA"
                   android:paddingVertical="6dp" />
               <ListView
@@ -184,21 +195,32 @@ jobs:
           cat << 'EOF' > app/src/main/java/com/studytube/app/MainActivity.kt
           package com.studytube.app
 
+          import android.graphics.Color
           import android.net.Uri
           import android.os.Bundle
+          import android.view.View
+          import android.view.ViewGroup
           import android.view.inputmethod.EditorInfo
           import android.widget.*
           import androidx.appcompat.app.AppCompatActivity
           import androidx.media3.common.MediaItem
           import androidx.media3.common.PlaybackParameters
+          import androidx.media3.datasource.DefaultHttpDataSource
           import androidx.media3.exoplayer.ExoPlayer
+          import androidx.media3.exoplayer.source.MergingMediaSource
+          import androidx.media3.exoplayer.source.ProgressiveMediaSource
           import androidx.media3.ui.PlayerView
           import kotlinx.coroutines.*
-          import org.json.JSONArray
-          import org.json.JSONObject
-          import java.net.HttpURLConnection
-          import java.net.URL
-          import java.net.URLEncoder
+          import okhttp3.OkHttpClient
+          import okhttp3.RequestBody.Companion.toRequestBody
+          import org.schabi.newpipe.extractor.NewPipe
+          import org.schabi.newpipe.extractor.ServiceList
+          import org.schabi.newpipe.extractor.downloader.Downloader
+          import org.schabi.newpipe.extractor.downloader.Request
+          import org.schabi.newpipe.extractor.downloader.Response
+          import org.schabi.newpipe.extractor.stream.StreamInfo
+          import org.schabi.newpipe.extractor.stream.StreamInfoItem
+          import java.util.concurrent.TimeUnit
 
           @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
           class MainActivity : AppCompatActivity() {
@@ -206,21 +228,25 @@ jobs:
               private var currentSpeed = 1.0f
               private val speeds = listOf(1.0f, 1.25f, 1.5f, 1.75f, 2.0f)
               private var speedIdx = 0
-              private val videoIds = mutableListOf<String>()
+              private val videoUrls = mutableListOf<String>()
               private val videoTitles = mutableListOf<String>()
               private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
-              private val instances = listOf("https://pipedapi.kavin.rocks", "https://pipedapi.adminforge.de", "https://api.piped.yt")
+              private lateinit var statusText: TextView
 
               override fun onCreate(savedInstanceState: Bundle?) {
                   super.onCreate(savedInstanceState)
                   setContentView(R.layout.activity_main)
+
+                  try {
+                      NewPipe.init(OkHttpDownloader())
+                  } catch (_: Exception) {}
 
                   val searchInput = findViewById<EditText>(R.id.searchInput)
                   val searchBtn = findViewById<Button>(R.id.searchBtn)
                   val playerView = findViewById<PlayerView>(R.id.playerView)
                   val skipSilenceSwitch = findViewById<Switch>(R.id.skipSilenceSwitch)
                   val speedBtn = findViewById<Button>(R.id.speedBtn)
-                  val statusText = findViewById<TextView>(R.id.statusText)
+                  statusText = findViewById(R.id.statusText)
                   val resultsList = findViewById<ListView>(R.id.resultsList)
 
                   player = ExoPlayer.Builder(this).build()
@@ -242,16 +268,30 @@ jobs:
                   val doSearch = {
                       val q = searchInput.text.toString().trim()
                       if (q.isNotEmpty()) {
-                          statusText.text = "Searching..."
-                          scope.launch {
-                              val found = searchVideos(q)
-                              videoIds.clear()
-                              videoTitles.clear()
-                              found.forEach { (id, title) -> videoIds.add(id); videoTitles.add(title) }
-                              resultsList.adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_list_item_1, videoTitles).apply {
-                                  notifyDataSetChanged()
+                          if (q.contains("youtube.com/") || q.contains("youtu.be/")) {
+                              playVideoUrl(q, "Direct Video Link")
+                          } else {
+                              statusText.text = "Searching YouTube directly..."
+                              scope.launch {
+                                  val (found, err) = searchVideos(q)
+                                  videoUrls.clear()
+                                  videoTitles.clear()
+                                  found.forEach { (url, title) -> videoUrls.add(url); videoTitles.add(title) }
+                                  resultsList.adapter = object : ArrayAdapter<String>(this@MainActivity, android.R.layout.simple_list_item_1, videoTitles) {
+                                      override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+                                          val tv = super.getView(position, convertView, parent) as TextView
+                                          tv.setTextColor(Color.WHITE)
+                                          tv.textSize = 15f
+                                          tv.setPadding(16, 24, 16, 24)
+                                          return tv
+                                      }
+                                  }
+                                  statusText.text = if (found.isEmpty()) {
+                                      "Search error: ${err ?: "No videos returned"}"
+                                  } else {
+                                      "Found ${found.size} videos — tap one to play:"
+                                  }
                               }
-                              statusText.text = if (found.isEmpty()) "No results found. Try again." else "Tap a video to play with ExoPlayer:"
                           }
                       }
                   }
@@ -262,65 +302,98 @@ jobs:
                   }
 
                   resultsList.setOnItemClickListener { _, _, pos, _ ->
-                      val id = videoIds[pos]
-                      statusText.text = "Loading stream..."
-                      scope.launch {
-                          val streamUrl = getStreamUrl(id)
-                          if (streamUrl != null) {
-                              statusText.text = "Playing: ${videoTitles[pos]}"
-                              player.setMediaItem(MediaItem.fromUri(Uri.parse(streamUrl)))
-                              player.prepare()
-                              player.play()
+                      playVideoUrl(videoUrls[pos], videoTitles[pos])
+                  }
+              }
+
+              private fun playVideoUrl(ytUrl: String, title: String) {
+                  statusText.text = "Extracting stream for: $title..."
+                  scope.launch {
+                      val (streams, err) = extractStreams(ytUrl)
+                      if (streams != null) {
+                          val (videoUrl, audioUrl) = streams
+                          statusText.text = "Playing: $title"
+                          val dsFactory = DefaultHttpDataSource.Factory()
+                              .setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+                          if (audioUrl != null) {
+                              val videoSource = ProgressiveMediaSource.Factory(dsFactory).createMediaSource(MediaItem.fromUri(Uri.parse(videoUrl)))
+                              val audioSource = ProgressiveMediaSource.Factory(dsFactory).createMediaSource(MediaItem.fromUri(Uri.parse(audioUrl)))
+                              player.setMediaSource(MergingMediaSource(videoSource, audioSource))
                           } else {
-                              statusText.text = "Stream unavailable for this video. Try another."
+                              player.setMediaSource(ProgressiveMediaSource.Factory(dsFactory).createMediaSource(MediaItem.fromUri(Uri.parse(videoUrl))))
                           }
+                          player.prepare()
+                          player.play()
+                      } else {
+                          statusText.text = "Stream error: ${err ?: "Could not load video"}"
                       }
                   }
               }
 
-              private suspend fun searchVideos(query: String): List<Pair<String, String>> = withContext(Dispatchers.IO) {
-                  val enc = URLEncoder.encode(query, "UTF-8")
-                  for (base in instances) {
-                      try {
-                          val conn = URL("$base/search?q=$enc&filter=videos").openConnection() as HttpURLConnection
-                          conn.connectTimeout = 5000
-                          conn.readTimeout = 5000
-                          val text = conn.inputStream.bufferedReader().readText()
-                          val items = JSONObject(text).getJSONArray("items")
-                          val list = mutableListOf<Pair<String, String>>()
-                          for (i in 0 until items.length()) {
-                              val obj = items.getJSONObject(i)
-                              val url = obj.optString("url", "")
-                              val title = obj.optString("title", "")
-                              if (url.contains("v=")) {
-                                  list.add(url.substringAfter("v=") to title)
-                              }
+              private suspend fun searchVideos(query: String): Pair<List<Pair<String, String>>, String?> = withContext(Dispatchers.IO) {
+                  try {
+                      val extractor = ServiceList.YouTube.getSearchExtractor(query)
+                      extractor.fetchPage()
+                      val list = mutableListOf<Pair<String, String>>()
+                      for (item in extractor.initialPage.items) {
+                          if (item is StreamInfoItem) {
+                              list.add(item.url to "${item.name} (${item.uploaderName})")
                           }
-                          if (list.isNotEmpty()) return@withContext list
-                      } catch (_: Exception) {}
+                      }
+                      list to null
+                  } catch (e: Exception) {
+                      emptyList<Pair<String, String>>() to "${e.javaClass.simpleName}: ${e.message}"
                   }
-                  emptyList()
               }
 
-              private suspend fun getStreamUrl(videoId: String): String? = withContext(Dispatchers.IO) {
-                  for (base in instances) {
-                      try {
-                          val conn = URL("$base/streams/$videoId").openConnection() as HttpURLConnection
-                          conn.connectTimeout = 5000
-                          conn.readTimeout = 5000
-                          val json = JSONObject(conn.inputStream.bufferedReader().readText())
-                          val hls = json.optString("hls", "")
-                          if (hls.isNotEmpty()) return@withContext hls
-                          val streams: JSONArray = json.optJSONArray("videoStreams") ?: continue
-                          for (i in 0 until streams.length()) {
-                              val s = streams.getJSONObject(i)
-                              if (!s.optBoolean("videoOnly", true) && s.optString("mimeType").contains("mp4")) {
-                                  return@withContext s.getString("url")
-                              }
-                          }
-                      } catch (_: Exception) {}
+              private suspend fun extractStreams(ytUrl: String): Pair<Pair<String, String?>?, String?> = withContext(Dispatchers.IO) {
+                  try {
+                      val info = StreamInfo.getInfo(ServiceList.YouTube, ytUrl)
+                      val muxed = info.videoStreams.firstOrNull { it.format?.name?.contains("MPEG_4") == true }
+                          ?: info.videoStreams.firstOrNull()
+                      if (muxed != null && !muxed.content.isNullOrEmpty()) {
+                          return@withContext (muxed.content to null) to null
+                      }
+                      val videoOnly = info.videoOnlyStreams.firstOrNull { it.resolution.contains("720") || it.resolution.contains("480") }
+                          ?: info.videoOnlyStreams.firstOrNull()
+                      val audioOnly = info.audioStreams.firstOrNull()
+                      if (videoOnly != null && audioOnly != null) {
+                          return@withContext (videoOnly.content to audioOnly.content) to null
+                      }
+                      null to "No playable stream URLs found"
+                  } catch (e: Exception) {
+                      null to "${e.javaClass.simpleName}: ${e.message}"
                   }
-                  null
+              }
+
+              class OkHttpDownloader : Downloader() {
+                  private val client = OkHttpClient.Builder()
+                      .connectTimeout(15, TimeUnit.SECONDS)
+                      .readTimeout(15, TimeUnit.SECONDS)
+                      .build()
+
+                  override fun execute(request: Request): Response {
+                      val reqBuilder = okhttp3.Request.Builder()
+                          .url(request.url())
+                          .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+                      for ((k, vals) in request.headers()) {
+                          for (v in vals) {
+                              reqBuilder.addHeader(k, v)
+                          }
+                      }
+                      val body = request.dataToSend()?.toRequestBody(null)
+                      when (request.httpMethod()) {
+                          "POST" -> reqBuilder.post(body ?: ByteArray(0).toRequestBody(null))
+                          "HEAD" -> reqBuilder.head()
+                          else -> reqBuilder.get()
+                      }
+                      val resp = client.newCall(reqBuilder.build()).execute()
+                      val headers = mutableMapOf<String, List<String>>()
+                      for (name in resp.headers.names()) {
+                          headers[name] = resp.headers.values(name)
+                      }
+                      return Response(resp.code, resp.message, headers, resp.body?.string() ?: "", resp.request.url.toString())
+                  }
               }
 
               override fun onDestroy() {
@@ -331,7 +404,6 @@ jobs:
           }
           EOF
 
-          sudo apt-get update && sudo apt-get install -y gradle
           gradle wrapper --gradle-version 8.5
           chmod +x gradlew
           ./gradlew assembleDebug
