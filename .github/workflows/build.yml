@@ -38,30 +38,19 @@ jobs:
           android {
               namespace = "com.studytube.app"
               compileSdk = 34
-              defaultConfig {
-                  applicationId = "com.studytube.app"
-                  minSdk = 24
-                  targetSdk = 34
-                  versionCode = 5
-                  versionName = "5.0"
-              }
-              compileOptions {
-                  isCoreLibraryDesugaringEnabled = true
-                  sourceCompatibility = JavaVersion.VERSION_17
-                  targetCompatibility = JavaVersion.VERSION_17
-              }
+              defaultConfig { applicationId = "com.studytube.app"; minSdk = 24; targetSdk = 34; versionCode = 6; versionName = "6.0" }
+              compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
               kotlinOptions { jvmTarget = "17" }
           }
           dependencies {
-              coreLibraryDesugaring("com.android.tools:desugar_jdk_libs_nio:2.0.4")
               implementation("androidx.core:core-ktx:1.12.0")
               implementation("androidx.appcompat:appcompat:1.6.1")
               implementation("com.google.android.material:material:1.11.0")
               implementation("androidx.media3:media3-exoplayer:1.2.1")
               implementation("androidx.media3:media3-ui:1.2.1")
-              implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
-              implementation("com.github.TeamNewPipe:NewPipeExtractor:v0.24.2")
+              implementation("com.github.TeamNewPipe:NewPipeExtractor:v0.27.1")
               implementation("com.squareup.okhttp3:okhttp:4.12.0")
+              implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
           }
           EOF
           cat << 'EOF' > app/src/main/AndroidManifest.xml
@@ -69,7 +58,7 @@ jobs:
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
               <uses-permission android:name="android.permission.INTERNET" />
               <application android:allowBackup="true" android:label="StudyTube" android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar" android:usesCleartextTraffic="true">
-                  <activity android:name=".MainActivity" android:exported="true" android:configChanges="orientation|screenSize|screenLayout|keyboardHidden">
+                  <activity android:name=".MainActivity" android:exported="true" android:configChanges="orientation|screenSize|keyboardHidden">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
                           <category android:name="android.intent.category.LAUNCHER" />
@@ -118,11 +107,11 @@ jobs:
               <androidx.media3.ui.PlayerView
                   android:id="@+id/playerView"
                   android:layout_width="match_parent"
-                  android:layout_height="220dp"
+                  android:layout_height="230dp"
                   android:background="#000000"
                   app:show_buffering="when_playing" />
               <HorizontalScrollView
-                  android:id="@+id/controlsContainer"
+                  android:id="@+id/controlsScroll"
                   android:layout_width="match_parent"
                   android:layout_height="wrap_content"
                   android:scrollbars="none"
@@ -184,46 +173,48 @@ jobs:
           cat << 'EOF' > app/src/main/java/com/studytube/app/MainActivity.kt
           package com.studytube.app
 
+          import android.app.AlertDialog
           import android.content.pm.ActivityInfo
           import android.net.Uri
           import android.os.Bundle
-          import android.util.TypedValue
           import android.view.View
           import android.view.ViewGroup
           import android.view.inputmethod.EditorInfo
           import android.widget.*
           import androidx.activity.OnBackPressedCallback
-          import androidx.appcompat.app.AlertDialog
           import androidx.appcompat.app.AppCompatActivity
           import androidx.core.view.WindowCompat
           import androidx.core.view.WindowInsetsCompat
           import androidx.core.view.WindowInsetsControllerCompat
           import androidx.media3.common.MediaItem
           import androidx.media3.common.PlaybackParameters
-          import androidx.media3.datasource.DefaultHttpDataSource
           import androidx.media3.exoplayer.ExoPlayer
           import androidx.media3.exoplayer.source.MergingMediaSource
           import androidx.media3.exoplayer.source.ProgressiveMediaSource
+          import androidx.media3.datasource.DefaultHttpDataSource
           import androidx.media3.ui.PlayerView
           import kotlinx.coroutines.*
           import okhttp3.OkHttpClient
+          import okhttp3.Request
           import okhttp3.RequestBody.Companion.toRequestBody
           import org.schabi.newpipe.extractor.NewPipe
           import org.schabi.newpipe.extractor.ServiceList
           import org.schabi.newpipe.extractor.downloader.Downloader
-          import org.schabi.newpipe.extractor.downloader.Request
-          import org.schabi.newpipe.extractor.downloader.Response
+          import org.schabi.newpipe.extractor.downloader.Request as NPRequest
+          import org.schabi.newpipe.extractor.downloader.Response as NPResponse
+          import org.schabi.newpipe.extractor.stream.AudioStream
           import org.schabi.newpipe.extractor.stream.StreamInfo
           import org.schabi.newpipe.extractor.stream.StreamInfoItem
+          import org.schabi.newpipe.extractor.stream.VideoStream
           import java.util.concurrent.TimeUnit
 
           @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
           class MainActivity : AppCompatActivity() {
               private lateinit var player: ExoPlayer
-              private lateinit var playerView: PlayerView
               private lateinit var rootLayout: LinearLayout
               private lateinit var searchBarContainer: LinearLayout
-              private lateinit var controlsContainer: HorizontalScrollView
+              private lateinit var playerView: PlayerView
+              private lateinit var controlsScroll: HorizontalScrollView
               private lateinit var statusText: TextView
               private lateinit var resultsList: ListView
               private lateinit var qualityBtn: Button
@@ -232,14 +223,16 @@ jobs:
               private var currentSpeed = 1.0f
               private val speeds = listOf(1.0f, 1.25f, 1.5f, 1.75f, 2.0f)
               private var speedIdx = 0
+
               private val videoUrls = mutableListOf<String>()
               private val videoTitles = mutableListOf<String>()
               private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
-              private var availableQualities = listOf<Pair<String, String>>()
-              private var currentAudioUrl: String? = null
-              private var preferredQuality = "360p"
+              private var availableVideos = listOf<VideoStream>()
+              private var bestAudioUrl: String? = null
+              private var preferredHeight = 360
               private var isFullscreen = false
+              private var currentTitle = ""
 
               class OkHttpDownloader : Downloader() {
                   private val client = OkHttpClient.Builder()
@@ -247,19 +240,32 @@ jobs:
                       .readTimeout(15, TimeUnit.SECONDS)
                       .build()
 
-                  override fun execute(request: Request): Response {
-                      val reqBuilder = okhttp3.Request.Builder()
-                          .url(request.url())
-                          .method(request.httpMethod(), request.dataToSend()?.toRequestBody())
-                      request.headers().forEach { (k, vList) ->
-                          vList.forEach { v -> reqBuilder.addHeader(k, v) }
+                  override fun execute(request: NPRequest): NPResponse {
+                      val reqBuilder = Request.Builder().url(request.url())
+                      request.headers().forEach { (k, values) ->
+                          values.forEach { v -> reqBuilder.addHeader(k, v) }
                       }
-                      if (request.headers()["User-Agent"].isNullOrEmpty()) {
-                          reqBuilder.header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+                      if (reqBuilder.build().header("User-Agent") == null) {
+                          reqBuilder.header(
+                              "User-Agent",
+                              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+                          )
+                      }
+                      reqBuilder.header("Accept-Language", "en-US,en;q=0.9")
+
+                      if (request.httpMethod().equals("POST", ignoreCase = true)) {
+                          val body = (request.dataToSend() ?: ByteArray(0)).toRequestBody(null)
+                          reqBuilder.post(body)
+                      } else {
+                          reqBuilder.method(request.httpMethod(), null)
                       }
                       val resp = client.newCall(reqBuilder.build()).execute()
                       val bodyStr = resp.body?.string() ?: ""
-                      return Response(resp.code, resp.message, resp.headers.toMultimap(), bodyStr, resp.request.url.toString())
+                      val headers = mutableMapOf<String, MutableList<String>>()
+                      resp.headers.forEach { (k, v) ->
+                          headers.getOrPut(k) { mutableListOf() }.add(v)
+                      }
+                      return NPResponse(resp.code, resp.message, headers, bodyStr, resp.request.url.toString())
                   }
               }
 
@@ -273,10 +279,10 @@ jobs:
 
                   rootLayout = findViewById(R.id.rootLayout)
                   searchBarContainer = findViewById(R.id.searchBarContainer)
-                  controlsContainer = findViewById(R.id.controlsContainer)
                   val searchInput = findViewById<EditText>(R.id.searchInput)
                   val searchBtn = findViewById<Button>(R.id.searchBtn)
                   playerView = findViewById(R.id.playerView)
+                  controlsScroll = findViewById(R.id.controlsScroll)
                   val skipSilenceSwitch = findViewById<Switch>(R.id.skipSilenceSwitch)
                   val speedBtn = findViewById<Button>(R.id.speedBtn)
                   qualityBtn = findViewById(R.id.qualityBtn)
@@ -288,24 +294,25 @@ jobs:
                   player.skipSilenceEnabled = true
                   playerView.player = player
 
-                  playerView.setFullscreenButtonClickListener {
-                      toggleFullscreen()
+                  playerView.setFullscreenButtonClickListener { enterFs ->
+                      setFullscreenMode(enterFs)
                   }
 
                   fullscreenBtn.setOnClickListener {
-                      toggleFullscreen()
+                      setFullscreenMode(!isFullscreen)
                   }
 
                   onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
                       override fun handleOnBackPressed() {
                           if (isFullscreen) {
-                              toggleFullscreen()
+                              setFullscreenMode(false)
                           } else {
                               isEnabled = false
                               onBackPressedDispatcher.onBackPressed()
                           }
                       }
                   })
+
                   skipSilenceSwitch.setOnCheckedChangeListener { _, isChecked ->
                       player.skipSilenceEnabled = isChecked
                       Toast.makeText(this, if (isChecked) "Skip Silence ON" else "Skip Silence OFF", Toast.LENGTH_SHORT).show()
@@ -317,188 +324,185 @@ jobs:
                       player.playbackParameters = PlaybackParameters(currentSpeed)
                       speedBtn.text = "Speed: ${currentSpeed}x"
                   }
-
                   qualityBtn.setOnClickListener {
-                      if (availableQualities.isEmpty()) {
-                          Toast.makeText(this, "Play a video first to choose quality", Toast.LENGTH_SHORT).show()
+                      if (availableVideos.isEmpty()) {
+                          Toast.makeText(this, "Play a video first to select quality", Toast.LENGTH_SHORT).show()
                           return@setOnClickListener
                       }
-                      val labels = availableQualities.map { it.first }.toTypedArray()
+                      val labels = availableVideos.map { v ->
+                          if (v.height > 0) "${v.height}p" else v.resolution ?: "Auto"
+                      }.toTypedArray()
+
                       AlertDialog.Builder(this)
                           .setTitle("Select Video Quality")
                           .setItems(labels) { _, which ->
-                              val chosen = availableQualities[which]
-                              preferredQuality = chosen.first
-                              qualityBtn.text = "Quality: ${chosen.first}"
-                              val resumePos = player.currentPosition
-                              val wasPlaying = player.isPlaying
-                              startStream(chosen.second, currentAudioUrl, resumePos, wasPlaying)
-                              Toast.makeText(this, "Switched to ${chosen.first}", Toast.LENGTH_SHORT).show()
+                              val chosen = availableVideos[which]
+                              if (chosen.height > 0) preferredHeight = chosen.height
+                              qualityBtn.text = "Quality: ${labels[which]}"
+                              val savedPos = player.currentPosition
+                              playSelectedStream(chosen, bestAudioUrl, savedPos)
                           }
                           .show()
                   }
 
-                  val handleAction = {
+                  val doSearch = {
                       val q = searchInput.text.toString().trim()
                       if (q.isNotEmpty()) {
                           if (q.contains("youtube.com/") || q.contains("youtu.be/")) {
-                              playVideoUrl(q, "Custom Video Link")
+                              loadAndPlay(q, "Direct Link")
                           } else {
                               statusText.text = "Searching YouTube..."
                               scope.launch {
-                                  val result = searchVideos(q)
-                                  result.fold(
-                                      onSuccess = { found ->
-                                          videoUrls.clear()
-                                          videoTitles.clear()
-                                          found.forEach { (url, title) -> videoUrls.add(url); videoTitles.add(title) }
-                                          resultsList.adapter = object : ArrayAdapter<String>(this@MainActivity, android.R.layout.simple_list_item_1, videoTitles) {
-                                              override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-                                                  val view = super.getView(position, convertView, parent) as TextView
-                                                  view.setTextColor(0xFFFFFFFF.toInt())
-                                                  view.textSize = 14f
-                                                  return view
-                                              }
-                                          }
-                                          statusText.text = if (found.isEmpty()) "No videos found for '$q'." else "Tap a video to play:"
-                                      },
-                                      onFailure = { err ->
-                                          statusText.text = "Search error: ${err.localizedMessage}"
-                                      }
-                                  )
+                                  val (found, err) = searchVideos(q)
+                                  videoUrls.clear()
+                                  videoTitles.clear()
+                                  found.forEach { (url, title) -> videoUrls.add(url); videoTitles.add(title) }
+                                  resultsList.adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_list_item_1, videoTitles)
+                                  statusText.text = when {
+                                      found.isNotEmpty() -> "Tap a video to play:"
+                                      err != null -> "Search error: $err"
+                                      else -> "No videos found."
+                                  }
                               }
                           }
                       }
                   }
 
-                  searchBtn.setOnClickListener { handleAction() }
+                  searchBtn.setOnClickListener { doSearch() }
                   searchInput.setOnEditorActionListener { _, actionId, _ ->
-                      if (actionId == EditorInfo.IME_ACTION_SEARCH) { handleAction(); true } else false
+                      if (actionId == EditorInfo.IME_ACTION_SEARCH) { doSearch(); true } else false
                   }
 
                   resultsList.setOnItemClickListener { _, _, pos, _ ->
-                      playVideoUrl(videoUrls[pos], videoTitles[pos])
+                      loadAndPlay(videoUrls[pos], videoTitles[pos])
                   }
               }
 
-              private fun toggleFullscreen() {
-                  isFullscreen = !isFullscreen
-                  val insetsController = WindowCompat.getInsetsController(window, window.decorView)
-                  insetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+              private fun setFullscreenMode(enable: Boolean) {
+                  isFullscreen = enable
+                  val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
+                  windowInsetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
                   val params = playerView.layoutParams as LinearLayout.LayoutParams
-                  if (isFullscreen) {
+                  if (enable) {
                       requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-                      insetsController.hide(WindowInsetsCompat.Type.systemBars())
-                      rootLayout.setPadding(0, 0, 0, 0)
+                      windowInsetsController.hide(WindowInsetsCompat.Type.systemBars())
                       searchBarContainer.visibility = View.GONE
-                      controlsContainer.visibility = View.GONE
+                      controlsScroll.visibility = View.GONE
                       statusText.visibility = View.GONE
                       resultsList.visibility = View.GONE
+                      rootLayout.setPadding(0, 0, 0, 0)
                       params.height = ViewGroup.LayoutParams.MATCH_PARENT
                       fullscreenBtn.text = "Exit Fullscreen"
                   } else {
                       requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-                      insetsController.show(WindowInsetsCompat.Type.systemBars())
-                      val pad = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 12f, resources.displayMetrics).toInt()
-                      rootLayout.setPadding(pad, pad, pad, pad)
+                      windowInsetsController.show(WindowInsetsCompat.Type.systemBars())
                       searchBarContainer.visibility = View.VISIBLE
-                      controlsContainer.visibility = View.VISIBLE
+                      controlsScroll.visibility = View.VISIBLE
                       statusText.visibility = View.VISIBLE
                       resultsList.visibility = View.VISIBLE
-                      params.height = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 220f, resources.displayMetrics).toInt()
+                      val pad = (12 * resources.displayMetrics.density).toInt()
+                      rootLayout.setPadding(pad, pad, pad, pad)
+                      params.height = (230 * resources.displayMetrics.density).toInt()
                       fullscreenBtn.text = "Fullscreen"
                   }
                   playerView.layoutParams = params
               }
 
-              private fun startStream(videoUrl: String, audioUrl: String?, seekMs: Long = 0L, autoPlay: Boolean = true) {
+              private fun loadAndPlay(url: String, title: String) {
+                  statusText.text = "Loading video stream..."
+                  scope.launch {
+                      val (info, err) = fetchStreamInfo(url)
+                      if (info != null) {
+                          currentTitle = info.name ?: title
+                          val allVideos = (info.videoStreams + info.videoOnlyStreams)
+                              .filter { !it.content.isNullOrEmpty() }
+                              .distinctBy { if (it.height > 0) "${it.height}p" else it.resolution }
+                              .sortedByDescending { it.height }
+
+                          val bestAudio: AudioStream? = info.audioStreams
+                              .filter { !it.content.isNullOrEmpty() }
+                              .maxByOrNull { it.averageBitrate }
+
+                          availableVideos = allVideos
+                          bestAudioUrl = bestAudio?.content
+
+                          val selected = allVideos.minByOrNull { kotlin.math.abs(it.height - preferredHeight) }
+                              ?: allVideos.firstOrNull()
+
+                          if (selected != null) {
+                              val label = if (selected.height > 0) "${selected.height}p" else (selected.resolution ?: "Auto")
+                              qualityBtn.text = "Quality: $label"
+                              playSelectedStream(selected, bestAudioUrl, 0L)
+                          } else if (!info.hlsUrl.isNullOrEmpty()) {
+                              qualityBtn.text = "Quality: HLS"
+                              statusText.text = "Playing: $currentTitle"
+                              player.setMediaItem(MediaItem.fromUri(Uri.parse(info.hlsUrl)))
+                              player.prepare()
+                              player.play()
+                          } else {
+                              statusText.text = "No playable streams found."
+                          }
+                      } else {
+                          statusText.text = "Stream error: ${err ?: "Unavailable"}"
+                      }
+                  }
+              }
+
+              private fun playSelectedStream(video: VideoStream, audioUrl: String?, seekMs: Long) {
                   val dataSourceFactory = DefaultHttpDataSource.Factory()
-                      .setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+                      .setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
+                      .setAllowCrossProtocolRedirects(true)
+
                   val videoSource = ProgressiveMediaSource.Factory(dataSourceFactory)
-                      .createMediaSource(MediaItem.fromUri(Uri.parse(videoUrl)))
-                  if (audioUrl != null) {
+                      .createMediaSource(MediaItem.fromUri(Uri.parse(video.content)))
+
+                  if (video.isVideoOnly && !audioUrl.isNullOrEmpty()) {
                       val audioSource = ProgressiveMediaSource.Factory(dataSourceFactory)
                           .createMediaSource(MediaItem.fromUri(Uri.parse(audioUrl)))
                       player.setMediaSource(MergingMediaSource(videoSource, audioSource))
                   } else {
                       player.setMediaSource(videoSource)
                   }
+                  if (seekMs > 0) player.seekTo(seekMs)
                   player.prepare()
-                  if (seekMs > 0L) {
-                      player.seekTo(seekMs)
-                  }
                   player.playbackParameters = PlaybackParameters(currentSpeed)
-                  player.playWhenReady = autoPlay
+                  player.play()
+                  val label = if (video.height > 0) "${video.height}p" else (video.resolution ?: "Auto")
+                  statusText.text = "Playing ($label): $currentTitle"
               }
 
-              private fun playVideoUrl(url: String, title: String) {
-                  statusText.text = "Loading stream..."
-                  scope.launch {
-                      val streamResult = getStreams(url)
-                      streamResult.fold(
-                          onSuccess = { (qualities, audioUrl) ->
-                              if (qualities.isEmpty()) {
-                                  statusText.text = "No playable stream found for this video."
-                              } else {
-                                  availableQualities = qualities
-                                  currentAudioUrl = audioUrl
-                                  val selected = qualities.find { it.first.equals(preferredQuality, ignoreCase = true) }
-                                      ?: qualities.find { it.first.contains("360") }
-                                      ?: qualities.find { it.first.contains("480") }
-                                      ?: qualities.last()
-                                  qualityBtn.text = "Quality: ${selected.first}"
-                                  statusText.text = "Playing: $title"
-                                  startStream(selected.second, audioUrl, 0L, true)
-                              }
-                          },
-                          onFailure = { err ->
-                              statusText.text = "Stream error: ${err.localizedMessage}"
-                          }
-                      )
-                  }
-              }
-
-              private suspend fun searchVideos(query: String): Result<List<Pair<String, String>>> = withContext(Dispatchers.IO) {
-                  runCatching {
+              private suspend fun searchVideos(query: String): Pair<List<Pair<String, String>>, String?> = withContext(Dispatchers.IO) {
+                  try {
                       val extractor = ServiceList.YouTube.getSearchExtractor(query)
                       extractor.fetchPage()
-                      extractor.initialPage.items.filterIsInstance<StreamInfoItem>().map { item ->
-                          item.url to "${item.name} (${item.uploaderName})"
+                      val list = mutableListOf<Pair<String, String>>()
+                      for (item in extractor.initialPage.items) {
+                          if (item is StreamInfoItem) {
+                              val title = if (!item.uploaderName.isNullOrEmpty()) "${item.name} (${item.uploaderName})" else item.name
+                              list.add(item.url to title)
+                          }
                       }
+                      list to null
+                  } catch (e: Exception) {
+                      emptyList<Pair<String, String>>() to (e.message ?: "Unknown error")
                   }
               }
 
-              private suspend fun getStreams(url: String): Result<Pair<List<Pair<String, String>>, String?>> = withContext(Dispatchers.IO) {
-                  runCatching {
-                      val info = StreamInfo.getInfo(ServiceList.YouTube, url)
-                      val audioUrl = info.audioStreams.maxByOrNull { it.averageBitrate }?.content
-                      val qualityMap = linkedMapOf<String, String>()
-
-                      if (audioUrl != null) {
-                          info.videoOnlyStreams
-                              .sortedByDescending { it.resolution.replace("p", "").toIntOrNull() ?: 0 }
-                              .forEach { stream ->
-                                  val res = stream.resolution.ifEmpty { "Unknown" }
-                                  if (!qualityMap.containsKey(res)) {
-                                      qualityMap[res] = stream.content
-                                  }
-                              }
+              private suspend fun fetchStreamInfo(url: String): Pair<StreamInfo?, String?> = withContext(Dispatchers.IO) {
+                  var lastErr: String? = null
+                  repeat(3) { attempt ->
+                      try {
+                          if (attempt > 0) {
+                              delay(600L * attempt)
+                              try { NewPipe.init(OkHttpDownloader()) } catch (_: Exception) {}
+                          }
+                          val info = StreamInfo.getInfo(ServiceList.YouTube, url)
+                          return@withContext info to null
+                      } catch (e: Exception) {
+                          lastErr = e.message ?: "Failed to load stream"
                       }
-
-                      if (qualityMap.isEmpty()) {
-                          info.videoStreams
-                              .sortedByDescending { it.resolution.replace("p", "").toIntOrNull() ?: 0 }
-                              .forEach { stream ->
-                                  val res = stream.resolution.ifEmpty { "Default" }
-                                  if (!qualityMap.containsKey(res)) {
-                                      qualityMap[res] = stream.content
-                                  }
-                              }
-                          return@runCatching qualityMap.toList() to null
-                      }
-
-                      qualityMap.toList() to audioUrl
                   }
+                  null to lastErr
               }
 
               override fun onDestroy() {
