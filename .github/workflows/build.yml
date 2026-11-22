@@ -1,36 +1,1039 @@
 name: Build StudyTube APK
-on:
-  workflow_dispatch:
-  push:
+on: [workflow_dispatch, push]
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Setup Java 17
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
-      - name: Generate Project Files
+      - name: Generate Project & Build APK
         run: |
-          python3 - << 'PYEOF'
-import os, zlib, base64
-files = {
-    "settings.gradle.kts": "eNqtj7GKAjEQhvs8RUi126y9cMUhCorehtV+iZshxstmQjI5EPHdL4qKXHGVfzHFN/zDfMFlY/1GeWVgBE/8zHhJhIDJEkYL6Y6uMYjGQVU/wah+wM9KLyr3gk1U2oG83ZYY6bm8sAvTEMBr8MOpg4Quk8X/H9ighiYBVd1fuPhcrvv2q5ddu5rPdn03l+22fofBDfMzz9HxjzJtJQ5EIU0nk6OloIbvxqKoi9BDKyKSjHiEgRqvRig1saWsT7u8B8GsH1zWUImpCkHU7BeBfnWi",
-    "build.gradle.kts": "eNoryClNz8wrVqjmUgCCzBQNpeT8XL3EvJSi/MwUvcSCgpzM5MSSzPw8JU2FstSiYiBLQclCz0jPSEkBJFupkJaYU5wK151flK6XlVqSVJQINFUvO78kJzMPZhyyEYZ6lnpGaGbUcgEABy4uNQ==",
-    "gradle.properties": "eNrLL0rXSy9KTMlJ1csqy00sSi+21Y3IrTAyMLHI5UrMSynKz0zRKy1OdYQwI2xLikpTubLzS3Iy8/SS81NS9YpLKnNSbfPT0jKTMxNzuAC82B2z",
-    "app/build.gradle.kts": "eNqdVE9v2jAUv/MpEKfuEIsAGpWlnRiHThOd1qpX5MSv6SOO7dnPDDT1u89OAmVdodp8iJ2X9/vz/BxbFSrUfvhrMIwD5dWoNA0TWjqDkglrFZaC0OjRh2OGcRXbABVORCSrDSnUB0hMex4M+peeVYsGvBUlDD8NW3pPQe4pFJAERm1ODFtUcCfrmDSdDdqghEcRFC2MfsSqJ0vjxNaNvECaRoO6I53MjjESrgI6ah3CW3A+Ui6MTE6vX8dXsYwkds3GHf3z4NT6rU1+/IlNb4IrYRE/R6sFKqR9xH8RW/HQMbKH5fe7m9vVOp+/8vaPIPQL4+Arxpa4/WfwoRIOdbXUolCQdohcgFPPXdP+trzZNvetgVRoPj/UGVESLGgJukQ4AMq3NP88QGSM8lx2X9cbWa8VFn6t0fAJG7PZ4VQ1VkEDmtqeXo16+I4lCZ4eWU07nrM8ot7DxPaX7fbxl1XOPrL8DDD5rYypFBxtN4LAoVD8uIjS+fvSDUgUU95NGeyMVWIPLqInZ+XPgAP+D0oKEt2xy0z9RGQvkrS/zY8gHATLuvwp73GzS3vdbhnSUyjYPYhmBT+/oQXez8sdOVGScXw7ZpP5Wfm37pEd7+csdt0EQg0+64uNtczZtL1hfgNARIL5",
-    "app/src/main/AndroidManifest.xml": "eNqdk8Fu2zAMhu95CkP3SNttCOx0rhegRVMPaD30ODAy7RCRJUOSu3jow09O7DRd2h2mk0z+/vSTlOKrfaOiZ7SOjE7YZ/6JRailKUnXCet8Nf/CrpazuAFNFTofBbl2C9ClNVQmbOt9uxDCyS024PgY59I0AtqdsOjEGGPLWRRW3Dl08xZtQ244MxrTCw0NJmwCvAr4bV6sHvJVwSLxv4in9G71c/09u3tlQNsqkuBD+hAY1sQBpcyva5C7rk2Ytx2yC4mCDaqEPfqu7Itu847Ch44EN1+d7xWKYvji9+DREqjMNK3RqL3j36DPqd56nptUDm6uwV7ChoozhWA97n1hoapIjtaWJ3EMAfBMvj9FzhHH5gQLpNNRx94V4r414Zzy79LPNdLoiupsC7pGlzBjKRRzaOaLkxZRP9JvHLdr6E3nX3bYbwzY8obKEvWZ7YN10j4Q5hWp0KG3uVNpH076+DM/avh9epuf5vwGEsaNtbH9vzGTiq/TH3l2s3q4gMXiA7uxmEYw3jJxds3CKxLTM1rO/gBzyxrQ",
-    "app/src/main/res/layout/activity_main.xml": "eNrdWF2P2jgUfZ9fYaUvu6oavqouQpN2ARVNJaS2C1tpn5CJDbFwbK/twNBf35svJhlMYLbTlRjnBZxzk3vvOb439u2H+5ijLdWGSRF4Hb/tISpCSZhYB15iV2/63of3N7dTJijWU7yXiUVgIswAC6IlI4EXWasGrZYJIxpj4xfzfijjFlablqamVcx5NwhGYa7UJaZvcGJlblfcHaTv/PM1Iy0tpc1dqgN4NrfYMWKjwIuxDaOFwpoKNy6ibB3ZJqDUDOawzXIEybIsxLwOWeJws9YyEeDcq/YkveoAhUme1E6XKO/9TXazltdsxhmoAUwYjbAeS3ADTLR3BD4XdEPgO43VIoRHO8G14CP49z11gp98aoz1momRtFbGgdd/CDYL+CNhdk7vH4JtCPiTUEnFodPRtuElTbAy0Lf9M8BdAey4URETcHOWOYesVCxEUiOFjaXoH5nMkyVFf/819X3fbW8h8LHkUoNGJtk4g7vLXviqnw03tia8zsf0cgMLAd4dGCyk6GYipp9VSrkJPBymP/KoT6BTouZ7RQMvdd0NMvByTlPBA0on1EOtqjBGCQhGXCKLkRWXiMKt6p9RR67smcXa5sI+SV4pknOUzXN+J5N2u9e7WDNp4rKctarloywpE41jeq6iKAiJ/qJy0u3W1qO7QmajVhkK3L0fU8Jwz0+Y/yXz8huju2ZdqAPuEmG4g3lSYzgYKDUwkdwtlslqRXVW33cRFYvUI/h3jIaWxr7TRSwJLIMVsxUyK8SVXD4s1lmoJee1VBylIRU7oEyO/R9bhMleuMQaqoWQgp7pDXOpjhuDsxM+4+o+b3C20VXBa423zO4DLwQbqheHr4JKTFlcsx2DPNfm3LVtw9SMcfj4ormJd9Lm0kz8p2w4Shl4hgrXUDO4qblVsfC9F24ocTWCU83AnTRFKTnqB8+cq7dHnxdP7g2OpKaeDxB8cN+fhh41iu4f6fU8HKTYIedjrGDVrjA3P0PEvwnmsByukoqvue8D1HvXVi+BjFXCOZRkSsVV8jE5uP8SyFiuhwlh8iqZGK1R5vwAfW7K1/WQYfCWXme7AMdfCgFkyoy9WhYI+q39+4soTFyGG36tVIxK759ARW/YGXfGl1LRH/bbT6biwMKjrXk+59rOlVu99FCseXtnYG+SmHntgOWXb+2qpxkwuUfGJmT/+PALH46/OBMbhJdyS93PKvM7zMYxpjil+lZspwLvHWjhIPLbtHQ0Zwk22Am3ZlqTxjOkyXmmcfrYsEQQtmWEphF3s3EScVc+o4j3sYJ+ACcG0ow=",
-    "app/src/main/java/com/studytube/app/MainActivity.kt": "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",
-}
-for path, b64 in files.items():
-    os.makedirs(os.path.dirname(path) or '.', exist_ok=True)
-    with open(path, 'wb') as f:
-        f.write(zlib.decompress(base64.b64decode(b64)))
-          PYEOF
-      - name: Build Debug APK
-        run: |
+          mkdir -p app/src/main/java/com/studytube/app app/src/main/res/layout
+          cat << 'EOF' > settings.gradle.kts
+          pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+                  maven { url = uri("https://jitpack.io") }
+              }
+          }
+          rootProject.name = "StudyTube"
+          include(":app")
+          EOF
+          cat << 'EOF' > build.gradle.kts
+          plugins {
+              id("com.android.application") version "8.2.2" apply false
+              id("org.jetbrains.kotlin.android") version "1.9.22" apply false
+          }
+          EOF
+          cat << 'EOF' > gradle.properties
+          org.gradle.jvmargs=-Xmx2048m
+          android.useAndroidX=true
+          kotlin.code.style=official
+          EOF
+          cat << 'EOF' > app/build.gradle.kts
+          plugins {
+              id("com.android.application")
+              id("org.jetbrains.kotlin.android")
+          }
+          android {
+              namespace = "com.studytube.app"
+              compileSdk = 34
+              defaultConfig {
+                  applicationId = "com.studytube.app"
+                  minSdk = 24
+                  targetSdk = 34
+                  versionCode = 8
+                  versionName = "8.0"
+              }
+              compileOptions {
+                  sourceCompatibility = JavaVersion.VERSION_17
+                  targetCompatibility = JavaVersion.VERSION_17
+                  isCoreLibraryDesugaringEnabled = true
+              }
+              kotlinOptions { jvmTarget = "17" }
+              packaging {
+                  resources {
+                      excludes += "/META-INF/{AL2.0,LGPL2.1}"
+                  }
+              }
+          }
+          dependencies {
+              coreLibraryDesugaring("com.android.tools:desugar_jdk_libs_nio:2.0.4")
+              implementation("androidx.core:core-ktx:1.12.0")
+              implementation("androidx.appcompat:appcompat:1.6.1")
+              implementation("com.google.android.material:material:1.11.0")
+              implementation("androidx.media3:media3-exoplayer:1.2.1")
+              implementation("androidx.media3:media3-ui:1.2.1")
+              implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+              implementation("com.github.TeamNewPipe:NewPipeExtractor:v0.27.1")
+              implementation("com.squareup.okhttp3:okhttp:4.12.0")
+          }
+          EOF
+          cat << 'EOF' > app/src/main/AndroidManifest.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.INTERNET" />
+              <uses-permission android:name="android.permission.WAKE_LOCK" />
+              <application
+                  android:allowBackup="true"
+                  android:label="StudyTube"
+                  android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+                  android:usesCleartextTraffic="true">
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true"
+                      android:configChanges="orientation|screenSize|screenLayout|keyboardHidden">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          EOF
+          cat << 'EOF' > app/src/main/res/layout/activity_main.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:app="http://schemas.android.com/apk/res-auto"
+              android:id="@+id/rootLayout"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:orientation="vertical"
+              android:background="#0F0F0F"
+              android:padding="12dp">
+              <LinearLayout
+                  android:id="@+id/searchBarRow"
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:orientation="horizontal"
+                  android:layout_marginBottom="8dp">
+                  <EditText
+                      android:id="@+id/searchInput"
+                      android:layout_width="0dp"
+                      android:layout_height="48dp"
+                      android:layout_weight="1"
+                      android:hint="Search topic or paste YouTube link..."
+                      android:textColor="#FFFFFF"
+                      android:textColorHint="#888888"
+                      android:background="#1E1E1E"
+                      android:paddingHorizontal="12dp"
+                      android:imeOptions="actionSearch"
+                      android:inputType="text" />
+                  <Button
+                      android:id="@+id/searchBtn"
+                      android:layout_width="wrap_content"
+                      android:layout_height="48dp"
+                      android:layout_marginStart="8dp"
+                      android:text="Search"
+                      android:backgroundTint="#FF0033"
+                      android:textColor="#FFFFFF" />
+              </LinearLayout>
+              <androidx.media3.ui.PlayerView
+                  android:id="@+id/playerView"
+                  android:layout_width="match_parent"
+                  android:layout_height="220dp"
+                  android:background="#000000"
+                  app:show_buffering="when_playing" />
+              <HorizontalScrollView
+                  android:id="@+id/controlsScroll"
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:scrollbars="none"
+                  android:layout_marginTop="8dp">
+                  <LinearLayout
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:orientation="horizontal"
+                      android:gravity="center_vertical">
+                      <Switch
+                          android:id="@+id/skipSilenceSwitch"
+                          android:layout_width="wrap_content"
+                          android:layout_height="wrap_content"
+                          android:text="Skip Silence  "
+                          android:textColor="#FFFFFF"
+                          android:checked="true" />
+                      <Button
+                          android:id="@+id/speedBtn"
+                          android:layout_width="wrap_content"
+                          android:layout_height="40dp"
+                          android:layout_marginStart="8dp"
+                          android:text="Speed: 1.0x"
+                          android:backgroundTint="#272727"
+                          android:textColor="#FFFFFF" />
+                      <Button
+                          android:id="@+id/qualityBtn"
+                          android:layout_width="wrap_content"
+                          android:layout_height="40dp"
+                          android:layout_marginStart="8dp"
+                          android:text="Quality: 360p"
+                          android:backgroundTint="#272727"
+                          android:textColor="#FFFFFF" />
+                      <Button
+                          android:id="@+id/fullscreenBtn"
+                          android:layout_width="wrap_content"
+                          android:layout_height="40dp"
+                          android:layout_marginStart="8dp"
+                          android:text="Fullscreen"
+                          android:backgroundTint="#272727"
+                          android:textColor="#FFFFFF" />
+                      <Button
+                          android:id="@+id/bgAudioBtn"
+                          android:layout_width="wrap_content"
+                          android:layout_height="40dp"
+                          android:layout_marginStart="8dp"
+                          android:text="Bg Audio: OFF"
+                          android:backgroundTint="#272727"
+                          android:textColor="#FFFFFF" />
+                      <Button
+                          android:id="@+id/saveBtn"
+                          android:layout_width="wrap_content"
+                          android:layout_height="40dp"
+                          android:layout_marginStart="8dp"
+                          android:text="Save"
+                          android:backgroundTint="#272727"
+                          android:textColor="#FFFFFF" />
+                      <Button
+                          android:id="@+id/savedListBtn"
+                          android:layout_width="wrap_content"
+                          android:layout_height="40dp"
+                          android:layout_marginStart="8dp"
+                          android:text="Saved (0)"
+                          android:backgroundTint="#272727"
+                          android:textColor="#FFFFFF" />
+                      <Button
+                          android:id="@+id/blocklistBtn"
+                          android:layout_width="wrap_content"
+                          android:layout_height="40dp"
+                          android:layout_marginStart="8dp"
+                          android:text="Blocklist"
+                          android:backgroundTint="#3A1C1C"
+                          android:textColor="#FFFFFF" />
+                  </LinearLayout>
+              </HorizontalScrollView>
+              <TextView
+                  android:id="@+id/statusText"
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:text="Search any study topic or paste a YouTube link above"
+                  android:textColor="#AAAAAA"
+                  android:paddingVertical="6dp" />
+              <ListView
+                  android:id="@+id/resultsList"
+                  android:layout_width="match_parent"
+                  android:layout_height="0dp"
+                  android:layout_weight="1"
+                  android:divider="#222222"
+                  android:dividerHeight="1dp" />
+          </LinearLayout>
+          EOF
+          cat << 'EOF' > app/src/main/java/com/studytube/app/MainActivity.kt
+          package com.studytube.app
+
+          import android.content.Context
+          import android.content.pm.ActivityInfo
+          import android.content.res.ColorStateList
+          import android.graphics.Color
+          import android.net.Uri
+          import android.os.Bundle
+          import android.os.Handler
+          import android.os.Looper
+          import android.text.InputFilter
+          import android.text.InputType
+          import android.util.TypedValue
+          import android.view.View
+          import android.view.ViewGroup
+          import android.view.inputmethod.EditorInfo
+          import android.widget.*
+          import androidx.activity.OnBackPressedCallback
+          import androidx.appcompat.app.AlertDialog
+          import androidx.appcompat.app.AppCompatActivity
+          import androidx.core.view.WindowCompat
+          import androidx.core.view.WindowInsetsCompat
+          import androidx.core.view.WindowInsetsControllerCompat
+          import androidx.media3.common.C
+          import androidx.media3.common.MediaItem
+          import androidx.media3.common.PlaybackParameters
+          import androidx.media3.datasource.DefaultHttpDataSource
+          import androidx.media3.exoplayer.ExoPlayer
+          import androidx.media3.exoplayer.source.MergingMediaSource
+          import androidx.media3.exoplayer.source.ProgressiveMediaSource
+          import androidx.media3.ui.PlayerView
+          import kotlinx.coroutines.*
+          import okhttp3.OkHttpClient
+          import okhttp3.Request
+          import okhttp3.RequestBody.Companion.toRequestBody
+          import org.json.JSONArray
+          import org.json.JSONObject
+          import org.schabi.newpipe.extractor.NewPipe
+          import org.schabi.newpipe.extractor.ServiceList
+          import org.schabi.newpipe.extractor.downloader.Downloader
+          import org.schabi.newpipe.extractor.downloader.Response
+          import org.schabi.newpipe.extractor.localization.Localization
+          import org.schabi.newpipe.extractor.stream.StreamInfo
+          import org.schabi.newpipe.extractor.stream.StreamInfoItem
+          import org.schabi.newpipe.extractor.stream.VideoStream
+          import java.util.concurrent.TimeUnit
+
+          data class SavedVideo(val url: String, val title: String)
+
+          @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
+          class MainActivity : AppCompatActivity() {
+              private lateinit var player: ExoPlayer
+              private lateinit var rootLayout: LinearLayout
+              private lateinit var searchBarRow: LinearLayout
+              private lateinit var playerView: PlayerView
+              private lateinit var controlsScroll: HorizontalScrollView
+              private lateinit var statusText: TextView
+              private lateinit var resultsList: ListView
+              private lateinit var qualityBtn: Button
+              private lateinit var fullscreenBtn: Button
+              private lateinit var bgAudioBtn: Button
+              private lateinit var saveBtn: Button
+              private lateinit var savedListBtn: Button
+              private lateinit var blocklistBtn: Button
+
+              private var currentSpeed = 1.0f
+              private val speeds = listOf(1.0f, 1.25f, 1.5f, 1.75f, 2.0f)
+              private var speedIdx = 0
+              private var preferredHeight = 360
+              private var isFullscreen = false
+              private var bgAudioEnabled = false
+
+              private var currentVideoUrl: String? = null
+              private var currentVideoTitle: String? = null
+              private var currentVideoChannel: String? = null
+              private var currentVideoStreams: List<VideoStream> = emptyList()
+              private var currentAudioUrl: String? = null
+
+              private val videoUrls = mutableListOf<String>()
+              private val videoTitles = mutableListOf<String>()
+              private val videoChannels = mutableListOf<String>()
+              private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+              private var newPipeInitialized = false
+
+              private val timerHandler = Handler(Looper.getMainLooper())
+              private val unlockTicker = object : Runnable {
+                  override fun run() {
+                      updateBlocklistButtonState()
+                      if (isTemporarilyUnlocked()) {
+                          timerHandler.postDelayed(this, 1000)
+                      }
+                  }
+              }
+
+              private class OkHttpDownloader : Downloader() {
+                  private val client = OkHttpClient.Builder()
+                      .connectTimeout(15, TimeUnit.SECONDS)
+                      .readTimeout(15, TimeUnit.SECONDS)
+                      .followRedirects(true)
+                      .build()
+
+                  override fun execute(request: org.schabi.newpipe.extractor.downloader.Request): Response {
+                      val reqBuilder = Request.Builder()
+                          .url(request.url())
+                          .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36")
+                          .header("Accept-Language", "en-US,en;q=0.9")
+
+                      request.headers().forEach { (key, values) ->
+                          values.forEach { value -> reqBuilder.addHeader(key, value) }
+                      }
+
+                      val dataToSend = request.dataToSend()
+                      if (request.httpMethod() == "POST") {
+                          val body = (dataToSend ?: ByteArray(0)).toRequestBody(null)
+                          reqBuilder.post(body)
+                      } else {
+                          reqBuilder.get()
+                      }
+
+                      val resp = client.newCall(reqBuilder.build()).execute()
+                      val bodyStr = resp.body?.string() ?: ""
+                      return Response(resp.code, resp.message, resp.headers.toMultimap(), bodyStr, resp.request.url.toString())
+                  }
+              }
+
+              private fun ensureNewPipe(forceReset: Boolean = false) {
+                  if (!newPipeInitialized || forceReset) {
+                      NewPipe.init(OkHttpDownloader(), Localization.DEFAULT)
+                      newPipeInitialized = true
+                  }
+              }
+
+              override fun onCreate(savedInstanceState: Bundle?) {
+                  super.onCreate(savedInstanceState)
+                  ensureNewPipe()
+                  setContentView(R.layout.activity_main)
+
+                  rootLayout = findViewById(R.id.rootLayout)
+                  searchBarRow = findViewById(R.id.searchBarRow)
+                  val searchInput = findViewById<EditText>(R.id.searchInput)
+                  val searchBtn = findViewById<Button>(R.id.searchBtn)
+                  playerView = findViewById(R.id.playerView)
+                  controlsScroll = findViewById(R.id.controlsScroll)
+                  val skipSilenceSwitch = findViewById<Switch>(R.id.skipSilenceSwitch)
+                  val speedBtn = findViewById<Button>(R.id.speedBtn)
+                  qualityBtn = findViewById(R.id.qualityBtn)
+                  fullscreenBtn = findViewById(R.id.fullscreenBtn)
+                  bgAudioBtn = findViewById(R.id.bgAudioBtn)
+                  saveBtn = findViewById(R.id.saveBtn)
+                  savedListBtn = findViewById(R.id.savedListBtn)
+                  blocklistBtn = findViewById(R.id.blocklistBtn)
+                  statusText = findViewById(R.id.statusText)
+                  resultsList = findViewById(R.id.resultsList)
+
+                  updateSavedCount()
+                  updateBlocklistButtonState()
+
+                  player = ExoPlayer.Builder(this).build()
+                  player.skipSilenceEnabled = true
+                  playerView.player = player
+
+                  playerView.setFullscreenButtonClickListener {
+                      toggleFullscreen()
+                  }
+
+                  fullscreenBtn.setOnClickListener {
+                      toggleFullscreen()
+                  }
+
+                  bgAudioBtn.setOnClickListener {
+                      bgAudioEnabled = !bgAudioEnabled
+                      if (bgAudioEnabled) {
+                          player.setWakeMode(C.WAKE_MODE_NETWORK)
+                          bgAudioBtn.text = "Bg Audio: ON"
+                          bgAudioBtn.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#1B5E20"))
+                          Toast.makeText(this, "Background audio ON (keeps playing when screen locks)", Toast.LENGTH_SHORT).show()
+                      } else {
+                          player.setWakeMode(C.WAKE_MODE_NONE)
+                          bgAudioBtn.text = "Bg Audio: OFF"
+                          bgAudioBtn.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#272727"))
+                          Toast.makeText(this, "Background audio OFF", Toast.LENGTH_SHORT).show()
+                      }
+                  }
+
+                  saveBtn.setOnClickListener {
+                      val url = currentVideoUrl
+                      val title = currentVideoTitle
+                      if (url != null && title != null) {
+                          toggleBookmark(url, title)
+                      } else {
+                          Toast.makeText(this, "Play a video first to save it", Toast.LENGTH_SHORT).show()
+                      }
+                  }
+
+                  savedListBtn.setOnClickListener {
+                      showSavedVideosDialog()
+                  }
+
+                  blocklistBtn.setOnClickListener {
+                      handleBlocklistClick()
+                  }
+
+                  onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+                      override fun handleOnBackPressed() {
+                          if (isFullscreen) {
+                              toggleFullscreen()
+                          } else {
+                              isEnabled = false
+                              onBackPressedDispatcher.onBackPressed()
+                          }
+                      }
+                  })
+
+                  skipSilenceSwitch.setOnCheckedChangeListener { _, isChecked ->
+                      player.skipSilenceEnabled = isChecked
+                      Toast.makeText(this, if (isChecked) "Skip Silence ON" else "Skip Silence OFF", Toast.LENGTH_SHORT).show()
+                  }
+
+                  speedBtn.setOnClickListener {
+                      speedIdx = (speedIdx + 1) % speeds.size
+                      currentSpeed = speeds[speedIdx]
+                      player.playbackParameters = PlaybackParameters(currentSpeed)
+                      speedBtn.text = "Speed: ${currentSpeed}x"
+                  }
+
+                  qualityBtn.setOnClickListener {
+                      showQualityDialog()
+                  }
+
+                  val doSearch = {
+                      val q = searchInput.text.toString().trim()
+                      if (q.isNotEmpty()) {
+                          if (q.startsWith("http://") || q.startsWith("https://") || q.contains("youtu.be/") || q.contains("youtube.com/")) {
+                              val cleanUrl = if (q.startsWith("http")) q else "https://$q"
+                              playVideoFromUrl(cleanUrl, "Direct Link")
+                          } else {
+                              statusText.text = "Searching YouTube..."
+                              scope.launch {
+                                  try {
+                                      val found = searchYouTube(q)
+                                      videoUrls.clear()
+                                      videoTitles.clear()
+                                      videoChannels.clear()
+                                      var hiddenCount = 0
+                                      found.forEach { (url, title, channel) ->
+                                          if (isChannelBlocked(channel)) {
+                                              hiddenCount++
+                                          } else {
+                                              videoUrls.add(url)
+                                              videoTitles.add(title)
+                                              videoChannels.add(channel)
+                                          }
+                                      }
+                                      val displayItems = videoTitles.mapIndexed { idx, title ->
+                                          val ch = videoChannels.getOrElse(idx) { "" }
+                                          if (ch.isNotEmpty()) "$title  •  $ch" else title
+                                      }
+                                      resultsList.adapter = object : ArrayAdapter<String>(this@MainActivity, android.R.layout.simple_list_item_1, displayItems) {
+                                          override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+                                              val view = super.getView(position, convertView, parent) as TextView
+                                              view.setTextColor(Color.WHITE)
+                                              view.textSize = 14f
+                                              view.setPadding(16, 20, 16, 20)
+                                              return view
+                                          }
+                                      }
+                                      statusText.text = when {
+                                          displayItems.isEmpty() && hiddenCount > 0 -> "All results were blocked by Parent Blocklist."
+                                          displayItems.isEmpty() -> "No results found. Try different keywords."
+                                          hiddenCount > 0 -> "Tap a video to play ($hiddenCount blocked channel video(s) hidden):"
+                                          else -> "Tap a video to play:"
+                                      }
+                                  } catch (e: Exception) {
+                                      statusText.text = "Search error: ${e.message ?: "Check internet"}"
+                                  }
+                              }
+                          }
+                      }
+                  }
+
+                  searchBtn.setOnClickListener { doSearch() }
+                  searchInput.setOnEditorActionListener { _, actionId, _ ->
+                      if (actionId == EditorInfo.IME_ACTION_SEARCH) { doSearch(); true } else false
+                  }
+
+                  resultsList.setOnItemClickListener { _, _, pos, _ ->
+                      playVideoFromUrl(videoUrls[pos], videoTitles[pos])
+                  }
+              }
+
+              private fun getPrefs() = getSharedPreferences("studytube_prefs", Context.MODE_PRIVATE)
+
+              private fun getParentPin(): String? = getPrefs().getString("parent_pin", null)
+
+              private fun isTemporarilyUnlocked(): Boolean {
+                  val until = getPrefs().getLong("unlock_until", 0L)
+                  return System.currentTimeMillis() < until
+              }
+
+              private fun getBlockedChannels(): MutableList<String> {
+                  val raw = getPrefs().getString("blocked_channels", "[]") ?: "[]"
+                  val list = mutableListOf<String>()
+                  try {
+                      val arr = JSONArray(raw)
+                      for (i in 0 until arr.length()) {
+                          list.add(arr.getString(i))
+                      }
+                  } catch (_: Exception) {}
+                  return list
+              }
+
+              private fun saveBlockedChannels(list: List<String>) {
+                  val arr = JSONArray()
+                  list.forEach { arr.put(it) }
+                  getPrefs().edit().putString("blocked_channels", arr.toString()).apply()
+              }
+
+              private fun isChannelBlocked(channelName: String?): Boolean {
+                  if (channelName.isNullOrBlank()) return false
+                  if (isTemporarilyUnlocked()) return false
+                  val clean = channelName.trim()
+                  return getBlockedChannels().any { it.trim().equals(clean, ignoreCase = true) }
+              }
+
+              private fun updateBlocklistButtonState() {
+                  val until = getPrefs().getLong("unlock_until", 0L)
+                  val remaining = until - System.currentTimeMillis()
+                  if (remaining > 0) {
+                      val mins = (remaining / 1000) / 60
+                      val secs = (remaining / 1000) % 60
+                      blocklistBtn.text = String.format("Unlocked (%02d:%02d)", mins, secs)
+                      blocklistBtn.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#E65100"))
+                  } else {
+                      if (until > 0L) {
+                          getPrefs().edit().putLong("unlock_until", 0L).apply()
+                          val playingCh = currentVideoChannel
+                          if (playingCh != null && isChannelBlocked(playingCh)) {
+                              player.stop()
+                              player.clearMediaItems()
+                              currentVideoUrl = null
+                              currentVideoTitle = null
+                              currentVideoChannel = null
+                              updateSaveButtonState()
+                              statusText.text = "15-min unlock expired. Blocked channel stopped."
+                              Toast.makeText(this, "15-min unlock expired — channel blocked again", Toast.LENGTH_LONG).show()
+                          }
+                      }
+                      val count = getBlockedChannels().size
+                      blocklistBtn.text = if (count > 0) "Blocklist ($count)" else "Blocklist"
+                      blocklistBtn.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#3A1C1C"))
+                  }
+              }
+
+              private fun handleBlocklistClick() {
+                  val savedPin = getParentPin()
+                  if (savedPin == null) {
+                      showCreatePinDialog()
+                  } else {
+                      showVerifyPinDialog(savedPin)
+                  }
+              }
+
+              private fun showCreatePinDialog() {
+                  val container = LinearLayout(this).apply {
+                      orientation = LinearLayout.VERTICAL
+                      setPadding(48, 24, 48, 8)
+                  }
+                  val pin1 = EditText(this).apply {
+                      hint = "Enter 4-digit Parent PIN"
+                      inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD
+                      filters = arrayOf(InputFilter.LengthFilter(4))
+                  }
+                  val pin2 = EditText(this).apply {
+                      hint = "Confirm 4-digit Parent PIN"
+                      inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD
+                      filters = arrayOf(InputFilter.LengthFilter(4))
+                  }
+                  container.addView(pin1)
+                  container.addView(pin2)
+
+                  AlertDialog.Builder(this)
+                      .setTitle("Set Parent 4-Digit PIN")
+                      .setMessage("Only parents should know this PIN. It locks the channel blocklist and controls 15-minute temporary unlocks.")
+                      .setView(container)
+                      .setPositiveButton("Save PIN") { _, _ ->
+                          val p1 = pin1.text.toString().trim()
+                          val p2 = pin2.text.toString().trim()
+                          if (p1.length == 4 && p1 == p2) {
+                              getPrefs().edit().putString("parent_pin", p1).apply()
+                              Toast.makeText(this, "Parent PIN saved!", Toast.LENGTH_SHORT).show()
+                              showManageBlocklistDialog()
+                          } else {
+                              Toast.makeText(this, "PINs must be 4 digits and match", Toast.LENGTH_SHORT).show()
+                          }
+                      }
+                      .setNegativeButton("Cancel", null)
+                      .show()
+              }
+
+              private fun showVerifyPinDialog(savedPin: String) {
+                  val pinInput = EditText(this).apply {
+                      hint = "Enter 4-digit Parent PIN"
+                      inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD
+                      filters = arrayOf(InputFilter.LengthFilter(4))
+                  }
+                  val container = LinearLayout(this).apply {
+                      orientation = LinearLayout.VERTICAL
+                      setPadding(48, 24, 48, 8)
+                      addView(pinInput)
+                  }
+
+                  AlertDialog.Builder(this)
+                      .setTitle("Parent PIN Required")
+                      .setView(container)
+                      .setPositiveButton("Verify") { _, _ ->
+                          if (pinInput.text.toString().trim() == savedPin) {
+                              showManageBlocklistDialog()
+                          } else {
+                              Toast.makeText(this, "Incorrect Parent PIN", Toast.LENGTH_SHORT).show()
+                          }
+                      }
+                      .setNegativeButton("Cancel", null)
+                      .show()
+              }
+
+              private fun showManageBlocklistDialog() {
+                  val blocked = getBlockedChannels()
+                  val container = LinearLayout(this).apply {
+                      orientation = LinearLayout.VERTICAL
+                      setPadding(40, 20, 40, 10)
+                  }
+
+                  val addRow = LinearLayout(this).apply {
+                      orientation = LinearLayout.HORIZONTAL
+                  }
+                  val channelInput = EditText(this).apply {
+                      hint = "Exact channel name..."
+                      layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+                  }
+                  val addBtn = Button(this).apply {
+                      text = "Block"
+                  }
+                  addRow.addView(channelInput)
+                  addRow.addView(addBtn)
+                  container.addView(addRow)
+
+                  val listLabel = TextView(this).apply {
+                      text = if (blocked.isEmpty()) "No channels blocked yet." else "Tap a channel below to unblock it:"
+                      setPadding(0, 20, 0, 8)
+                  }
+                  container.addView(listLabel)
+
+                  val listContainer = LinearLayout(this).apply {
+                      orientation = LinearLayout.VERTICAL
+                  }
+                  container.addView(listContainer)
+
+                  fun refreshChannelRows() {
+                      listContainer.removeAllViews()
+                      val current = getBlockedChannels()
+                      listLabel.text = if (current.isEmpty()) "No channels blocked yet." else "Tap a channel below to unblock it:"
+                      current.forEach { ch ->
+                          val rowBtn = Button(this).apply {
+                              text = "✕  $ch"
+                              isAllCaps = false
+                              setOnClickListener {
+                                  val updated = getBlockedChannels()
+                                  updated.remove(ch)
+                                  saveBlockedChannels(updated)
+                                  updateBlocklistButtonState()
+                                  refreshChannelRows()
+                                  Toast.makeText(this@MainActivity, "Unblocked: $ch", Toast.LENGTH_SHORT).show()
+                              }
+                          }
+                          listContainer.addView(rowBtn)
+                      }
+                  }
+                  refreshChannelRows()
+
+                  addBtn.setOnClickListener {
+                      val name = channelInput.text.toString().trim()
+                      if (name.isNotEmpty()) {
+                          val updated = getBlockedChannels()
+                          if (!updated.any { it.equals(name, ignoreCase = true) }) {
+                              updated.add(name)
+                              saveBlockedChannels(updated)
+                              updateBlocklistButtonState()
+                              refreshChannelRows()
+                              channelInput.setText("")
+                              Toast.makeText(this, "Blocked: $name", Toast.LENGTH_SHORT).show()
+                              if (isChannelBlocked(currentVideoChannel)) {
+                                  player.stop()
+                                  player.clearMediaItems()
+                                  currentVideoUrl = null
+                                  currentVideoTitle = null
+                                  currentVideoChannel = null
+                                  updateSaveButtonState()
+                                  statusText.text = "Stopped: channel added to Parent Blocklist."
+                              }
+                          }
+                      }
+                  }
+
+                  val scroll = ScrollView(this).apply { addView(container) }
+                  val builder = AlertDialog.Builder(this)
+                      .setTitle("Parent Blocklist Manager")
+                      .setView(scroll)
+                      .setPositiveButton("Unlock 15 Min") { _, _ ->
+                          val unlockUntil = System.currentTimeMillis() + (15 * 60 * 1000L)
+                          getPrefs().edit().putLong("unlock_until", unlockUntil).apply()
+                          timerHandler.removeCallbacks(unlockTicker)
+                          timerHandler.post(unlockTicker)
+                          Toast.makeText(this, "All channels unlocked for 15 minutes", Toast.LENGTH_LONG).show()
+                      }
+                      .setNegativeButton("Done", null)
+
+                  if (isTemporarilyUnlocked()) {
+                      builder.setNeutralButton("Lock Now") { _, _ ->
+                          getPrefs().edit().putLong("unlock_until", 0L).apply()
+                          updateBlocklistButtonState()
+                          Toast.makeText(this, "Blocklist locked immediately", Toast.LENGTH_SHORT).show()
+                      }
+                  } else {
+                      builder.setNeutralButton("Change PIN") { _, _ ->
+                          showCreatePinDialog()
+                      }
+                  }
+
+                  builder.show()
+              }
+
+              private fun getSavedVideos(): MutableList<SavedVideo> {
+                  val raw = getPrefs().getString("saved_videos", "[]") ?: "[]"
+                  val list = mutableListOf<SavedVideo>()
+                  try {
+                      val arr = JSONArray(raw)
+                      for (i in 0 until arr.length()) {
+                          val obj = arr.getJSONObject(i)
+                          list.add(SavedVideo(obj.getString("url"), obj.getString("title")))
+                      }
+                  } catch (_: Exception) {}
+                  return list
+              }
+
+              private fun saveVideosList(list: List<SavedVideo>) {
+                  val arr = JSONArray()
+                  list.forEach {
+                      val obj = JSONObject()
+                      obj.put("url", it.url)
+                      obj.put("title", it.title)
+                      arr.put(obj)
+                  }
+                  getPrefs().edit().putString("saved_videos", arr.toString()).apply()
+                  updateSavedCount()
+                  updateSaveButtonState()
+              }
+
+              private fun isBookmarked(url: String?): Boolean {
+                  if (url == null) return false
+                  return getSavedVideos().any { it.url == url }
+              }
+
+              private fun toggleBookmark(url: String, title: String) {
+                  val list = getSavedVideos()
+                  val existingIdx = list.indexOfFirst { it.url == url }
+                  if (existingIdx >= 0) {
+                      list.removeAt(existingIdx)
+                      Toast.makeText(this, "Removed from Saved", Toast.LENGTH_SHORT).show()
+                  } else {
+                      list.add(0, SavedVideo(url, title))
+                      Toast.makeText(this, "Video Saved!", Toast.LENGTH_SHORT).show()
+                  }
+                  saveVideosList(list)
+              }
+
+              private fun updateSavedCount() {
+                  val count = getSavedVideos().size
+                  savedListBtn.text = "Saved ($count)"
+              }
+
+              private fun updateSaveButtonState() {
+                  if (isBookmarked(currentVideoUrl)) {
+                      saveBtn.text = "Saved ✓"
+                      saveBtn.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#1565C0"))
+                  } else {
+                      saveBtn.text = "Save"
+                      saveBtn.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#272727"))
+                  }
+              }
+
+              private fun showSavedVideosDialog() {
+                  val saved = getSavedVideos()
+                  if (saved.isEmpty()) {
+                      Toast.makeText(this, "No saved videos yet. Tap Save while watching a lecture!", Toast.LENGTH_SHORT).show()
+                      return
+                  }
+                  val titles = saved.map { it.title }.toTypedArray()
+                  AlertDialog.Builder(this)
+                      .setTitle("Saved Lectures (${saved.size})")
+                      .setItems(titles) { _, which ->
+                          val chosen = saved[which]
+                          playVideoFromUrl(chosen.url, chosen.title)
+                      }
+                      .setNeutralButton("Delete One") { _, _ ->
+                          AlertDialog.Builder(this)
+                              .setTitle("Tap a video to delete")
+                              .setItems(titles) { _, delIdx ->
+                                  val updated = getSavedVideos()
+                                  updated.removeAt(delIdx)
+                                  saveVideosList(updated)
+                                  Toast.makeText(this, "Deleted from Saved", Toast.LENGTH_SHORT).show()
+                              }
+                              .setNegativeButton("Cancel", null)
+                              .show()
+                      }
+                      .setNegativeButton("Close", null)
+                      .show()
+              }
+
+              private fun toggleFullscreen() {
+                  isFullscreen = !isFullscreen
+                  val controller = WindowCompat.getInsetsController(window, window.decorView)
+                  if (isFullscreen) {
+                      requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                      controller.hide(WindowInsetsCompat.Type.systemBars())
+                      controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                      searchBarRow.visibility = View.GONE
+                      controlsScroll.visibility = View.GONE
+                      statusText.visibility = View.GONE
+                      resultsList.visibility = View.GONE
+                      rootLayout.setPadding(0, 0, 0, 0)
+                      playerView.layoutParams = LinearLayout.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT,
+                          ViewGroup.LayoutParams.MATCH_PARENT
+                      )
+                      fullscreenBtn.text = "Exit Full"
+                  } else {
+                      requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                      controller.show(WindowInsetsCompat.Type.systemBars())
+                      searchBarRow.visibility = View.VISIBLE
+                      controlsScroll.visibility = View.VISIBLE
+                      statusText.visibility = View.VISIBLE
+                      resultsList.visibility = View.VISIBLE
+                      val pad = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 12f, resources.displayMetrics).toInt()
+                      val heightPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 220f, resources.displayMetrics).toInt()
+                      rootLayout.setPadding(pad, pad, pad, pad)
+                      playerView.layoutParams = LinearLayout.LayoutParams(
+                          ViewGroup.LayoutParams.MATCH_PARENT,
+                          heightPx
+                      )
+                      fullscreenBtn.text = "Fullscreen"
+                  }
+              }
+
+              private fun showQualityDialog() {
+                  if (currentVideoStreams.isEmpty()) {
+                      Toast.makeText(this, "Play a video first to select quality", Toast.LENGTH_SHORT).show()
+                      return
+                  }
+                  val distinctStreams = currentVideoStreams
+                      .distinctBy { it.height }
+                      .sortedBy { it.height }
+
+                  val labels = distinctStreams.map { "${it.height}p (${it.format?.name ?: "MP4"})" }.toTypedArray()
+                  AlertDialog.Builder(this)
+                      .setTitle("Select Video Quality")
+                      .setItems(labels) { _, which ->
+                          val chosen = distinctStreams[which]
+                          preferredHeight = chosen.height
+                          qualityBtn.text = "Quality: ${preferredHeight}p"
+                          val pos = player.currentPosition
+                          val wasPlaying = player.isPlaying
+                          startExoPlayback(chosen.content, currentAudioUrl, pos, wasPlaying)
+                          Toast.makeText(this, "Switched to ${preferredHeight}p", Toast.LENGTH_SHORT).show()
+                      }
+                      .show()
+              }
+
+              private fun pickBestVideoStream(streams: List<VideoStream>): VideoStream? {
+                  if (streams.isEmpty()) return null
+                  return streams.minByOrNull { kotlin.math.abs(it.height - preferredHeight) }
+              }
+
+              private fun startExoPlayback(videoUrl: String, audioUrl: String?, seekPosMs: Long, autoPlay: Boolean) {
+                  val dataSourceFactory = DefaultHttpDataSource.Factory()
+                      .setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36")
+                      .setAllowCrossProtocolRedirects(true)
+
+                  val videoSource = ProgressiveMediaSource.Factory(dataSourceFactory)
+                      .createMediaSource(MediaItem.fromUri(Uri.parse(videoUrl)))
+
+                  if (audioUrl != null) {
+                      val audioSource = ProgressiveMediaSource.Factory(dataSourceFactory)
+                          .createMediaSource(MediaItem.fromUri(Uri.parse(audioUrl)))
+                      player.setMediaSource(MergingMediaSource(videoSource, audioSource))
+                  } else {
+                      player.setMediaSource(videoSource)
+                  }
+                  player.prepare()
+                  if (seekPosMs > 0) player.seekTo(seekPosMs)
+                  player.playbackParameters = PlaybackParameters(currentSpeed)
+                  player.playWhenReady = autoPlay
+              }
+
+              private fun playVideoFromUrl(url: String, fallbackTitle: String) {
+                  statusText.text = "Loading video stream..."
+                  scope.launch {
+                      try {
+                          val info = fetchStreamInfoWithRetry(url)
+                          val channelName = info.uploaderName ?: ""
+                          if (isChannelBlocked(channelName)) {
+                              statusText.text = "Blocked: \"$channelName\" is locked by Parent Blocklist."
+                              Toast.makeText(this@MainActivity, "Channel \"$channelName\" is blocked by parents", Toast.LENGTH_LONG).show()
+                              return@launch
+                          }
+
+                          val title = info.name ?: fallbackTitle
+                          currentVideoUrl = url
+                          currentVideoTitle = title
+                          currentVideoChannel = channelName
+                          updateSaveButtonState()
+
+                          val allVideoOnly = info.videoOnlyStreams.filter { it.content.isNotEmpty() }
+                          val allMuxed = info.videoStreams.filter { it.content.isNotEmpty() }
+                          val audioStream = info.audioStreams.maxByOrNull { it.averageBitrate }
+
+                          if (allVideoOnly.isNotEmpty() && audioStream != null) {
+                              currentVideoStreams = allVideoOnly
+                              currentAudioUrl = audioStream.content
+                              val chosen = pickBestVideoStream(allVideoOnly)!!
+                              qualityBtn.text = "Quality: ${chosen.height}p"
+                              statusText.text = "Playing (${chosen.height}p): $title"
+                              startExoPlayback(chosen.content, currentAudioUrl, 0L, true)
+                          } else if (allMuxed.isNotEmpty()) {
+                              currentVideoStreams = allMuxed
+                              currentAudioUrl = null
+                              val chosen = pickBestVideoStream(allMuxed)!!
+                              qualityBtn.text = "Quality: ${chosen.height}p"
+                              statusText.text = "Playing (${chosen.height}p): $title"
+                              startExoPlayback(chosen.content, null, 0L, true)
+                          } else {
+                              statusText.text = "No playable stream found for this video."
+                          }
+                      } catch (e: Exception) {
+                          statusText.text = "Stream error: ${e.message ?: "Try another video"}"
+                      }
+                  }
+              }
+
+              private suspend fun fetchStreamInfoWithRetry(url: String): StreamInfo = withContext(Dispatchers.IO) {
+                  var lastErr: Exception? = null
+                  for (attempt in 1..3) {
+                      try {
+                          if (attempt > 1) {
+                              ensureNewPipe(forceReset = true)
+                              delay(600L * attempt)
+                          }
+                          return@withContext StreamInfo.getInfo(ServiceList.YouTube, url)
+                      } catch (e: Exception) {
+                          lastErr = e
+                      }
+                  }
+                  throw lastErr ?: RuntimeException("Unable to load stream")
+              }
+
+              private suspend fun searchYouTube(query: String): List<Triple<String, String, String>> = withContext(Dispatchers.IO) {
+                  var lastErr: Exception? = null
+                  for (attempt in 1..2) {
+                      try {
+                          if (attempt > 1) ensureNewPipe(forceReset = true)
+                          val extractor = ServiceList.YouTube.getSearchExtractor(query)
+                          extractor.fetchPage()
+                          val list = mutableListOf<Triple<String, String, String>>()
+                          for (item in extractor.initialPage.items) {
+                              if (item is StreamInfoItem) {
+                                  list.add(Triple(item.url, item.name, item.uploaderName ?: ""))
+                              }
+                          }
+                          return@withContext list
+                      } catch (e: Exception) {
+                          lastErr = e
+                      }
+                  }
+                  throw lastErr ?: RuntimeException("Search failed")
+              }
+
+              override fun onPause() {
+                  super.onPause()
+                  if (!bgAudioEnabled) {
+                      player.pause()
+                  }
+              }
+
+              override fun onDestroy() {
+                  super.onDestroy()
+                  timerHandler.removeCallbacks(unlockTicker)
+                  scope.cancel()
+                  player.release()
+              }
+          }
+          EOF
           gradle wrapper --gradle-version 8.5
           chmod +x gradlew
           ./gradlew assembleDebug
