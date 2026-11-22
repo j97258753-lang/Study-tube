@@ -1,0 +1,299 @@
+name: Build StudyTube APK
+on: [workflow_dispatch, push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Generate Project & Build APK
+        run: |
+          mkdir -p app/src/main/java/com/studytube/app app/src/main/res/layout
+          cat << 'EOF' > settings.gradle.kts
+          pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
+          dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
+          rootProject.name = "StudyTube"
+          include(":app")
+          EOF
+          cat << 'EOF' > build.gradle.kts
+          plugins { id("com.android.application") version "8.2.2" apply false; id("org.jetbrains.kotlin.android") version "1.9.22" apply false }
+          EOF
+          cat << 'EOF' > gradle.properties
+          org.gradle.jvmargs=-Xmx2048m
+          android.useAndroidX=true
+          kotlin.code.style=official
+          EOF
+          cat << 'EOF' > app/build.gradle.kts
+          plugins { id("com.android.application"); id("org.jetbrains.kotlin.android") }
+          android {
+              namespace = "com.studytube.app"
+              compileSdk = 34
+              defaultConfig { applicationId = "com.studytube.app"; minSdk = 24; targetSdk = 34; versionCode = 1; versionName = "1.0" }
+              compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
+              kotlinOptions { jvmTarget = "17" }
+          }
+          dependencies {
+              implementation("androidx.core:core-ktx:1.12.0")
+              implementation("androidx.appcompat:appcompat:1.6.1")
+              implementation("com.google.android.material:material:1.11.0")
+              implementation("androidx.media3:media3-exoplayer:1.2.1")
+              implementation("androidx.media3:media3-ui:1.2.1")
+              implementation("androidx.media3:media3-exoplayer-hls:1.2.1")
+              implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+          }
+          EOF
+          cat << 'EOF' > app/src/main/AndroidManifest.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.INTERNET" />
+              <application android:allowBackup="true" android:label="StudyTube" android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar" android:usesCleartextTraffic="true">
+                  <activity android:name=".MainActivity" android:exported="true" android:configChanges="orientation|screenSize|keyboardHidden">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          EOF
+          cat << 'EOF' > app/src/main/res/layout/activity_main.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:app="http://schemas.android.com/apk/res-auto"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:orientation="vertical"
+              android:background="#0F0F0F"
+              android:padding="12dp">
+              <LinearLayout
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:orientation="horizontal"
+                  android:layout_marginBottom="8dp">
+                  <EditText
+                      android:id="@+id/searchInput"
+                      android:layout_width="0dp"
+                      android:layout_height="48dp"
+                      android:layout_weight="1"
+                      android:hint="Search topic (e.g. Force Class 10 ICSE)..."
+                      android:textColor="#FFFFFF"
+                      android:textColorHint="#888888"
+                      android:background="#1E1E1E"
+                      android:paddingHorizontal="12dp"
+                      android:imeOptions="actionSearch"
+                      android:inputType="text" />
+                  <Button
+                      android:id="@+id/searchBtn"
+                      android:layout_width="wrap_content"
+                      android:layout_height="48dp"
+                      android:layout_marginStart="8dp"
+                      android:text="Search"
+                      android:backgroundTint="#FF0033"
+                      android:textColor="#FFFFFF" />
+              </LinearLayout>
+              <androidx.media3.ui.PlayerView
+                  android:id="@+id/playerView"
+                  android:layout_width="match_parent"
+                  android:layout_height="220dp"
+                  android:background="#000000"
+                  app:show_buffering="when_playing" />
+              <LinearLayout
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:orientation="horizontal"
+                  android:gravity="center_vertical"
+                  android:layout_marginTop="8dp">
+                  <Switch
+                      android:id="@+id/skipSilenceSwitch"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:text="Skip Silence  "
+                      android:textColor="#FFFFFF"
+                      android:checked="true" />
+                  <Button
+                      android:id="@+id/speedBtn"
+                      android:layout_width="wrap_content"
+                      android:layout_height="40dp"
+                      android:layout_marginStart="12dp"
+                      android:text="Speed: 1.0x"
+                      android:backgroundTint="#272727"
+                      android:textColor="#FFFFFF" />
+              </LinearLayout>
+              <TextView
+                  android:id="@+id/statusText"
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:text="Search any study topic above to begin"
+                  android:textColor="#AAAAAA"
+                  android:paddingVertical="6dp" />
+              <ListView
+                  android:id="@+id/resultsList"
+                  android:layout_width="match_parent"
+                  android:layout_height="0dp"
+                  android:layout_weight="1"
+                  android:divider="#222222"
+                  android:dividerHeight="1dp" />
+          </LinearLayout>
+          EOF
+          cat << 'EOF' > app/src/main/java/com/studytube/app/MainActivity.kt
+          package com.studytube.app
+
+          import android.net.Uri
+          import android.os.Bundle
+          import android.view.inputmethod.EditorInfo
+          import android.widget.*
+          import androidx.appcompat.app.AppCompatActivity
+          import androidx.media3.common.MediaItem
+          import androidx.media3.common.PlaybackParameters
+          import androidx.media3.exoplayer.ExoPlayer
+          import androidx.media3.ui.PlayerView
+          import kotlinx.coroutines.*
+          import org.json.JSONArray
+          import org.json.JSONObject
+          import java.net.HttpURLConnection
+          import java.net.URL
+          import java.net.URLEncoder
+
+          @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
+          class MainActivity : AppCompatActivity() {
+              private lateinit var player: ExoPlayer
+              private var currentSpeed = 1.0f
+              private val speeds = listOf(1.0f, 1.25f, 1.5f, 1.75f, 2.0f)
+              private var speedIdx = 0
+              private val videoIds = mutableListOf<String>()
+              private val videoTitles = mutableListOf<String>()
+              private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+              private val instances = listOf("https://pipedapi.kavin.rocks", "https://pipedapi.adminforge.de", "https://api.piped.yt")
+
+              override fun onCreate(savedInstanceState: Bundle?) {
+                  super.onCreate(savedInstanceState)
+                  setContentView(R.layout.activity_main)
+
+                  val searchInput = findViewById<EditText>(R.id.searchInput)
+                  val searchBtn = findViewById<Button>(R.id.searchBtn)
+                  val playerView = findViewById<PlayerView>(R.id.playerView)
+                  val skipSilenceSwitch = findViewById<Switch>(R.id.skipSilenceSwitch)
+                  val speedBtn = findViewById<Button>(R.id.speedBtn)
+                  val statusText = findViewById<TextView>(R.id.statusText)
+                  val resultsList = findViewById<ListView>(R.id.resultsList)
+
+                  player = ExoPlayer.Builder(this).build()
+                  player.skipSilenceEnabled = true
+                  playerView.player = player
+
+                  skipSilenceSwitch.setOnCheckedChangeListener { _, isChecked ->
+                      player.skipSilenceEnabled = isChecked
+                      Toast.makeText(this, if (isChecked) "Skip Silence ON" else "Skip Silence OFF", Toast.LENGTH_SHORT).show()
+                  }
+
+                  speedBtn.setOnClickListener {
+                      speedIdx = (speedIdx + 1) % speeds.size
+                      currentSpeed = speeds[speedIdx]
+                      player.playbackParameters = PlaybackParameters(currentSpeed)
+                      speedBtn.text = "Speed: ${currentSpeed}x"
+                  }
+
+                  val doSearch = {
+                      val q = searchInput.text.toString().trim()
+                      if (q.isNotEmpty()) {
+                          statusText.text = "Searching..."
+                          scope.launch {
+                              val found = searchVideos(q)
+                              videoIds.clear()
+                              videoTitles.clear()
+                              found.forEach { (id, title) -> videoIds.add(id); videoTitles.add(title) }
+                              resultsList.adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_list_item_1, videoTitles).apply {
+                                  notifyDataSetChanged()
+                              }
+                              statusText.text = if (found.isEmpty()) "No results found. Try again." else "Tap a video to play with ExoPlayer:"
+                          }
+                      }
+                  }
+
+                  searchBtn.setOnClickListener { doSearch() }
+                  searchInput.setOnEditorActionListener { _, actionId, _ ->
+                      if (actionId == EditorInfo.IME_ACTION_SEARCH) { doSearch(); true } else false
+                  }
+
+                  resultsList.setOnItemClickListener { _, _, pos, _ ->
+                      val id = videoIds[pos]
+                      statusText.text = "Loading stream..."
+                      scope.launch {
+                          val streamUrl = getStreamUrl(id)
+                          if (streamUrl != null) {
+                              statusText.text = "Playing: ${videoTitles[pos]}"
+                              player.setMediaItem(MediaItem.fromUri(Uri.parse(streamUrl)))
+                              player.prepare()
+                              player.play()
+                          } else {
+                              statusText.text = "Stream unavailable for this video. Try another."
+                          }
+                      }
+                  }
+              }
+
+              private suspend fun searchVideos(query: String): List<Pair<String, String>> = withContext(Dispatchers.IO) {
+                  val enc = URLEncoder.encode(query, "UTF-8")
+                  for (base in instances) {
+                      try {
+                          val conn = URL("$base/search?q=$enc&filter=videos").openConnection() as HttpURLConnection
+                          conn.connectTimeout = 5000
+                          conn.readTimeout = 5000
+                          val text = conn.inputStream.bufferedReader().readText()
+                          val items = JSONObject(text).getJSONArray("items")
+                          val list = mutableListOf<Pair<String, String>>()
+                          for (i in 0 until items.length()) {
+                              val obj = items.getJSONObject(i)
+                              val url = obj.optString("url", "")
+                              val title = obj.optString("title", "")
+                              if (url.contains("v=")) {
+                                  list.add(url.substringAfter("v=") to title)
+                              }
+                          }
+                          if (list.isNotEmpty()) return@withContext list
+                      } catch (_: Exception) {}
+                  }
+                  emptyList()
+              }
+
+              private suspend fun getStreamUrl(videoId: String): String? = withContext(Dispatchers.IO) {
+                  for (base in instances) {
+                      try {
+                          val conn = URL("$base/streams/$videoId").openConnection() as HttpURLConnection
+                          conn.connectTimeout = 5000
+                          conn.readTimeout = 5000
+                          val json = JSONObject(conn.inputStream.bufferedReader().readText())
+                          val hls = json.optString("hls", "")
+                          if (hls.isNotEmpty()) return@withContext hls
+                          val streams: JSONArray = json.optJSONArray("videoStreams") ?: continue
+                          for (i in 0 until streams.length()) {
+                              val s = streams.getJSONObject(i)
+                              if (!s.optBoolean("videoOnly", true) && s.optString("mimeType").contains("mp4")) {
+                                  return@withContext s.getString("url")
+                              }
+                          }
+                      } catch (_: Exception) {}
+                  }
+                  null
+              }
+
+              override fun onDestroy() {
+                  super.onDestroy()
+                  scope.cancel()
+                  player.release()
+              }
+          }
+          EOF
+          gradle wrapper --gradle-version 8.5
+          chmod +x gradlew
+          ./gradlew assembleDebug
+      - name: Upload StudyTube APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: StudyTube-APK
+          path: app/build/outputs/apk/debug/app-debug.apk
