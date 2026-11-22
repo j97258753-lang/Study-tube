@@ -12,8 +12,15 @@ jobs:
       - name: Generate Project & Build APK
         run: |
           mkdir -p app/src/main/java/com/studytube/app app/src/main/res/layout
+
           cat << 'EOF' > settings.gradle.kts
-          pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
           dependencyResolutionManagement {
               repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
               repositories {
@@ -51,8 +58,8 @@ jobs:
                   applicationId = "com.studytube.app"
                   minSdk = 24
                   targetSdk = 34
-                  versionCode = 7
-                  versionName = "7.0"
+                  versionCode = 8
+                  versionName = "8.0"
               }
               compileOptions {
                   sourceCompatibility = JavaVersion.VERSION_17
@@ -64,7 +71,7 @@ jobs:
               }
           }
           dependencies {
-              coreLibraryDesugaring("com.android.tools:desugar_jdk_libs_nio:2.0.4")
+              coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
               implementation("androidx.core:core-ktx:1.12.0")
               implementation("androidx.appcompat:appcompat:1.6.1")
               implementation("com.google.android.material:material:1.11.0")
@@ -109,12 +116,14 @@ jobs:
               android:orientation="vertical"
               android:background="#0F0F0F"
               android:padding="12dp">
+
               <LinearLayout
                   android:id="@+id/searchBarContainer"
                   android:layout_width="match_parent"
                   android:layout_height="wrap_content"
                   android:orientation="horizontal"
                   android:layout_marginBottom="8dp">
+
                   <EditText
                       android:id="@+id/searchInput"
                       android:layout_width="0dp"
@@ -126,7 +135,9 @@ jobs:
                       android:background="#1E1E1E"
                       android:paddingHorizontal="12dp"
                       android:imeOptions="actionSearch"
-                      android:inputType="text" />
+                      android:inputType="text"
+                      android:singleLine="true" />
+
                   <Button
                       android:id="@+id/searchBtn"
                       android:layout_width="wrap_content"
@@ -136,24 +147,28 @@ jobs:
                       android:backgroundTint="#FF0033"
                       android:textColor="#FFFFFF" />
               </LinearLayout>
+
               <androidx.media3.ui.PlayerView
                   android:id="@+id/playerView"
                   android:layout_width="match_parent"
                   android:layout_height="220dp"
                   android:background="#000000"
                   app:show_buffering="when_playing" />
+
               <HorizontalScrollView
                   android:id="@+id/controlsScroll"
                   android:layout_width="match_parent"
                   android:layout_height="wrap_content"
-                  android:layout_marginTop="8dp"
-                  android:scrollbars="none">
+                  android:scrollbars="none"
+                  android:layout_marginTop="8dp">
+
                   <LinearLayout
-                      android:id="@+id/controlsBar"
+                      android:id="@+id/controlsRow"
                       android:layout_width="wrap_content"
                       android:layout_height="wrap_content"
                       android:orientation="horizontal"
                       android:gravity="center_vertical">
+
                       <Switch
                           android:id="@+id/skipSilenceSwitch"
                           android:layout_width="wrap_content"
@@ -161,6 +176,7 @@ jobs:
                           android:text="Skip Silence  "
                           android:textColor="#FFFFFF"
                           android:checked="true" />
+
                       <Button
                           android:id="@+id/speedBtn"
                           android:layout_width="wrap_content"
@@ -169,6 +185,7 @@ jobs:
                           android:text="Speed: 1.0x"
                           android:backgroundTint="#272727"
                           android:textColor="#FFFFFF" />
+
                       <Button
                           android:id="@+id/qualityBtn"
                           android:layout_width="wrap_content"
@@ -177,30 +194,7 @@ jobs:
                           android:text="Quality: 360p"
                           android:backgroundTint="#272727"
                           android:textColor="#FFFFFF" />
-                      <Button
-                          android:id="@+id/bgAudioBtn"
-                          android:layout_width="wrap_content"
-                          android:layout_height="40dp"
-                          android:layout_marginStart="8dp"
-                          android:text="Bg Audio: OFF"
-                          android:backgroundTint="#272727"
-                          android:textColor="#FFFFFF" />
-                      <Button
-                          android:id="@+id/saveBtn"
-                          android:layout_width="wrap_content"
-                          android:layout_height="40dp"
-                          android:layout_marginStart="8dp"
-                          android:text="Save"
-                          android:backgroundTint="#272727"
-                          android:textColor="#FFFFFF" />
-                      <Button
-                          android:id="@+id/savedListBtn"
-                          android:layout_width="wrap_content"
-                          android:layout_height="40dp"
-                          android:layout_marginStart="8dp"
-                          android:text="Saved (0)"
-                          android:backgroundTint="#272727"
-                          android:textColor="#FFFFFF" />
+
                       <Button
                           android:id="@+id/fullscreenBtn"
                           android:layout_width="wrap_content"
@@ -209,8 +203,45 @@ jobs:
                           android:text="Fullscreen"
                           android:backgroundTint="#272727"
                           android:textColor="#FFFFFF" />
+
+                      <Button
+                          android:id="@+id/bgAudioBtn"
+                          android:layout_width="wrap_content"
+                          android:layout_height="40dp"
+                          android:layout_marginStart="8dp"
+                          android:text="Bg Audio: OFF"
+                          android:backgroundTint="#272727"
+                          android:textColor="#FFFFFF" />
+
+                      <Button
+                          android:id="@+id/saveBtn"
+                          android:layout_width="wrap_content"
+                          android:layout_height="40dp"
+                          android:layout_marginStart="8dp"
+                          android:text="Save"
+                          android:backgroundTint="#272727"
+                          android:textColor="#FFFFFF" />
+
+                      <Button
+                          android:id="@+id/savedListBtn"
+                          android:layout_width="wrap_content"
+                          android:layout_height="40dp"
+                          android:layout_marginStart="8dp"
+                          android:text="Saved (0)"
+                          android:backgroundTint="#272727"
+                          android:textColor="#FFFFFF" />
+
+                      <Button
+                          android:id="@+id/blocklistBtn"
+                          android:layout_width="wrap_content"
+                          android:layout_height="40dp"
+                          android:layout_marginStart="8dp"
+                          android:text="Blocklist"
+                          android:backgroundTint="#272727"
+                          android:textColor="#FFFFFF" />
                   </LinearLayout>
               </HorizontalScrollView>
+
               <TextView
                   android:id="@+id/statusText"
                   android:layout_width="match_parent"
@@ -218,6 +249,7 @@ jobs:
                   android:text="Search any study topic or paste a YouTube link above"
                   android:textColor="#AAAAAA"
                   android:paddingVertical="6dp" />
+
               <ListView
                   android:id="@+id/resultsList"
                   android:layout_width="match_parent"
@@ -231,17 +263,23 @@ jobs:
           cat << 'EOF' > app/src/main/java/com/studytube/app/MainActivity.kt
           package com.studytube.app
 
-          import android.app.AlertDialog
           import android.content.Context
           import android.content.pm.ActivityInfo
+          import android.content.res.ColorStateList
           import android.graphics.Color
           import android.net.Uri
           import android.os.Bundle
+          import android.os.Handler
+          import android.os.Looper
+          import android.text.InputFilter
+          import android.text.InputType
           import android.view.View
           import android.view.ViewGroup
+          import android.view.WindowManager
           import android.view.inputmethod.EditorInfo
           import android.widget.*
           import androidx.activity.OnBackPressedCallback
+          import androidx.appcompat.app.AlertDialog
           import androidx.appcompat.app.AppCompatActivity
           import androidx.core.view.WindowCompat
           import androidx.core.view.WindowInsetsCompat
@@ -249,10 +287,10 @@ jobs:
           import androidx.media3.common.C
           import androidx.media3.common.MediaItem
           import androidx.media3.common.PlaybackParameters
-          import androidx.media3.datasource.DefaultHttpDataSource
           import androidx.media3.exoplayer.ExoPlayer
           import androidx.media3.exoplayer.source.MergingMediaSource
           import androidx.media3.exoplayer.source.ProgressiveMediaSource
+          import androidx.media3.datasource.DefaultHttpDataSource
           import androidx.media3.ui.PlayerView
           import kotlinx.coroutines.*
           import okhttp3.OkHttpClient
@@ -263,58 +301,90 @@ jobs:
           import org.schabi.newpipe.extractor.NewPipe
           import org.schabi.newpipe.extractor.ServiceList
           import org.schabi.newpipe.extractor.downloader.Downloader
-          import org.schabi.newpipe.extractor.downloader.Request as NpRequest
-          import org.schabi.newpipe.extractor.downloader.Response as NpResponse
+          import org.schabi.newpipe.extractor.downloader.Request as NPRequest
+          import org.schabi.newpipe.extractor.downloader.Response as NPResponse
+          import org.schabi.newpipe.extractor.exceptions.ReCaptchaException
           import org.schabi.newpipe.extractor.stream.StreamInfo
           import org.schabi.newpipe.extractor.stream.StreamInfoItem
           import org.schabi.newpipe.extractor.stream.VideoStream
           import java.util.concurrent.TimeUnit
 
-          class OkHttpDownloader : Downloader() {
-              private val client = OkHttpClient.Builder()
-                  .connectTimeout(15, TimeUnit.SECONDS)
-                  .readTimeout(15, TimeUnit.SECONDS)
-                  .build()
-
-              override fun execute(request: NpRequest): NpResponse {
-                  val reqBuilder = Request.Builder()
-                      .url(request.url())
-                      .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36")
-                      .header("Accept-Language", "en-US,en;q=0.9")
-                  request.headers().forEach { (k, v) -> v.forEach { reqBuilder.addHeader(k, it) } }
-                  val body = request.dataToSend()?.toRequestBody(null)
-                  when (request.httpMethod()) {
-                      "POST" -> reqBuilder.post(body ?: ByteArray(0).toRequestBody(null))
-                      "HEAD" -> reqBuilder.head()
-                      else -> reqBuilder.get()
-                  }
-                  val resp = client.newCall(reqBuilder.build()).execute()
-                  val respBody = resp.body?.string() ?: ""
-                  return NpResponse(resp.code, resp.message, resp.headers.toMultimap(), respBody, resp.request.url.toString())
-              }
-          }
-
           @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
           class MainActivity : AppCompatActivity() {
+
+              data class VideoStreamsBundle(
+                  val title: String,
+                  val channelName: String,
+                  val videoStreams: List<VideoStream>,
+                  val bestAudioUrl: String?,
+                  val hlsUrl: String?
+              )
+
+              data class SavedVideo(
+                  val url: String,
+                  val title: String,
+                  val channelName: String = ""
+              )
+
+              class OkHttpNewPipeDownloader : Downloader() {
+                  private val client = OkHttpClient.Builder()
+                      .connectTimeout(15, TimeUnit.SECONDS)
+                      .readTimeout(15, TimeUnit.SECONDS)
+                      .followRedirects(true)
+                      .build()
+
+                  override fun execute(request: NPRequest): NPResponse {
+                      val method = request.httpMethod()
+                      val url = request.url()
+                      val headers = request.headers()
+                      val dataToSend = request.dataToSend()
+
+                      val reqBuilder = Request.Builder()
+                          .url(url)
+                          .header(
+                              "User-Agent",
+                              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+                          )
+                          .header("Accept-Language", "en-US,en;q=0.9")
+
+                      for ((key, values) in headers) {
+                          if (values.isNotEmpty()) {
+                              reqBuilder.removeHeader(key)
+                              for (v in values) {
+                                  reqBuilder.addHeader(key, v)
+                              }
+                          }
+                      }
+                      if (method.equals("POST", ignoreCase = true)) {
+                          val body = (dataToSend ?: ByteArray(0)).toRequestBody(null)
+                          reqBuilder.post(body)
+                      } else {
+                          reqBuilder.get()
+                      }
+
+                      val response = client.newCall(reqBuilder.build()).execute()
+                      if (response.code == 429) {
+                          response.close()
+                          throw ReCaptchaException("reCaptcha Challenge requested", url)
+                      }
+
+                      val bodyString = response.body?.string() ?: ""
+                      val responseHeaders = mutableMapOf<String, List<String>>()
+                      for (name in response.headers.names()) {
+                          responseHeaders[name] = response.headers.values(name)
+                      }
+
+                      return NPResponse(
+                          response.code,
+                          response.message,
+                          responseHeaders,
+                          bodyString,
+                          response.request.url.toString()
+                      )
+                  }
+              }
+
               private lateinit var player: ExoPlayer
-              private var currentSpeed = 1.0f
-              private val speeds = listOf(1.0f, 1.25f, 1.5f, 1.75f, 2.0f)
-              private var speedIdx = 0
-              private val videoUrls = mutableListOf<String>()
-              private val videoTitles = mutableListOf<String>()
-              private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
-
-              private var currentVideoStreams: List<VideoStream> = emptyList()
-              private var currentAudioUrl: String? = null
-              private var currentMuxedStreams: List<VideoStream> = emptyList()
-              private var preferredResolution = "360p"
-              private var isFullscreen = false
-              private var bgAudioEnabled = false
-              private var wasPlayingBeforeStop = false
-
-              private var currentPlayingUrl: String? = null
-              private var currentPlayingTitle: String? = null
-
               private lateinit var rootLayout: LinearLayout
               private lateinit var searchBarContainer: LinearLayout
               private lateinit var playerView: PlayerView
@@ -326,12 +396,40 @@ jobs:
               private lateinit var bgAudioBtn: Button
               private lateinit var saveBtn: Button
               private lateinit var savedListBtn: Button
+              private lateinit var blocklistBtn: Button
+
+              private var currentSpeed = 1.0f
+              private val speeds = listOf(1.0f, 1.25f, 1.5f, 1.75f, 2.0f)
+              private var speedIdx = 0
+
+              private var preferredHeight = 360
+              private var currentBundle: VideoStreamsBundle? = null
+              private var isFullscreen = false
+              private var isBgAudioEnabled = false
+
+              private var currentVideoUrl: String? = null
+              private var currentVideoTitle: String? = null
+              private var currentChannelName: String? = null
+
+              private val videoUrls = mutableListOf<String>()
+              private val videoDisplayTitles = mutableListOf<String>()
+              private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+
+              private val unlockHandler = Handler(Looper.getMainLooper())
+              private val unlockCheckRunnable = object : Runnable {
+                  override fun run() {
+                      updateBlocklistButtonState()
+                      unlockHandler.postDelayed(this, 1000L)
+                  }
+              }
 
               override fun onCreate(savedInstanceState: Bundle?) {
                   super.onCreate(savedInstanceState)
                   setContentView(R.layout.activity_main)
 
-                  NewPipe.init(OkHttpDownloader())
+                  try {
+                      NewPipe.init(OkHttpNewPipeDownloader())
+                  } catch (_: Exception) {}
 
                   rootLayout = findViewById(R.id.rootLayout)
                   searchBarContainer = findViewById(R.id.searchBarContainer)
@@ -344,6 +442,7 @@ jobs:
                   bgAudioBtn = findViewById(R.id.bgAudioBtn)
                   saveBtn = findViewById(R.id.saveBtn)
                   savedListBtn = findViewById(R.id.savedListBtn)
+                  blocklistBtn = findViewById(R.id.blocklistBtn)
 
                   val searchInput = findViewById<EditText>(R.id.searchInput)
                   val searchBtn = findViewById<Button>(R.id.searchBtn)
@@ -354,42 +453,49 @@ jobs:
                   player.skipSilenceEnabled = true
                   playerView.player = player
 
-                  updateSavedCount()
+                  updateSavedCountButton()
+                  updateBlocklistButtonState()
+                  unlockHandler.post(unlockCheckRunnable)
 
                   playerView.setFullscreenButtonClickListener {
                       toggleFullscreen()
                   }
+
                   fullscreenBtn.setOnClickListener {
                       toggleFullscreen()
                   }
 
                   bgAudioBtn.setOnClickListener {
-                      bgAudioEnabled = !bgAudioEnabled
-                      if (bgAudioEnabled) {
+                      isBgAudioEnabled = !isBgAudioEnabled
+                      if (isBgAudioEnabled) {
                           player.setWakeMode(C.WAKE_MODE_NETWORK)
                           bgAudioBtn.text = "Bg Audio: ON"
-                          bgAudioBtn.setBackgroundColor(Color.parseColor("#1B5E20"))
-                          Toast.makeText(this, "Background / Screen-Off Audio ON", Toast.LENGTH_SHORT).show()
-                          } else {
+                          bgAudioBtn.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#1B5E20"))
+                          Toast.makeText(this, "Background Audio ON: Plays with screen off", Toast.LENGTH_SHORT).show()
+                      } else {
                           player.setWakeMode(C.WAKE_MODE_NONE)
                           bgAudioBtn.text = "Bg Audio: OFF"
-                          bgAudioBtn.setBackgroundColor(Color.parseColor("#272727"))
+                          bgAudioBtn.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#272727"))
                           Toast.makeText(this, "Background Audio OFF", Toast.LENGTH_SHORT).show()
                       }
                   }
 
                   saveBtn.setOnClickListener {
-                      val url = currentPlayingUrl
-                      val title = currentPlayingTitle
+                      val url = currentVideoUrl
+                      val title = currentVideoTitle
                       if (url.isNullOrEmpty() || title.isNullOrEmpty()) {
                           Toast.makeText(this, "Play a video first to save it", Toast.LENGTH_SHORT).show()
-                          return@setOnClickListener
+                      } else {
+                          saveCurrentVideo(url, title, currentChannelName ?: "")
                       }
-                      toggleBookmark(url, title)
                   }
 
                   savedListBtn.setOnClickListener {
                       showSavedVideosDialog()
+                  }
+
+                  blocklistBtn.setOnClickListener {
+                      handleBlocklistButtonClick()
                   }
 
                   onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
@@ -405,7 +511,11 @@ jobs:
 
                   skipSilenceSwitch.setOnCheckedChangeListener { _, isChecked ->
                       player.skipSilenceEnabled = isChecked
-                      Toast.makeText(this, if (isChecked) "Skip Silence ON" else "Skip Silence OFF", Toast.LENGTH_SHORT).show()
+                      Toast.makeText(
+                          this,
+                          if (isChecked) "Skip Silence ON" else "Skip Silence OFF",
+                          Toast.LENGTH_SHORT
+                      ).show()
                   }
 
                   speedBtn.setOnClickListener {
@@ -419,309 +529,600 @@ jobs:
                       showQualityDialog()
                   }
 
-                  val doSearch = {
+                  val doSearchOrPlay = {
                       val q = searchInput.text.toString().trim()
                       if (q.isNotEmpty()) {
                           if (q.contains("youtube.com/") || q.contains("youtu.be/")) {
-                              loadAndPlay(q, q)
+                              playVideoFromUrl(q, "YouTube Video")
                           } else {
                               statusText.text = "Searching YouTube..."
                               scope.launch {
-                                  val (found, err) = searchVideos(q)
+                                  val result = searchYouTube(q)
                                   videoUrls.clear()
-                                  videoTitles.clear()
-                                  found.forEach { (url, title) -> videoUrls.add(url); videoTitles.add(title) }
-                                  resultsList.adapter = object : ArrayAdapter<String>(this@MainActivity, android.R.layout.simple_list_item_1, videoTitles) {
+                                  videoDisplayTitles.clear()
+                                  result.first.forEach { (url, displayTitle) ->
+                                      videoUrls.add(url)
+                                      videoDisplayTitles.add(displayTitle)
+                                  }
+                                  resultsList.adapter = object : ArrayAdapter<String>(
+                                      this@MainActivity,
+                                      android.R.layout.simple_list_item_1,
+                                      videoDisplayTitles
+                                  ) {
                                       override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-                                          val v = super.getView(position, convertView, parent) as TextView
-                                          v.setTextColor(Color.WHITE)
-                                          v.textSize = 15f
-                                          return v
+                                          val view = super.getView(position, convertView, parent) as TextView
+                                          view.setTextColor(Color.WHITE)
+                                          return view
                                       }
                                   }
-                                  statusText.text = if (found.isEmpty()) "Error: $err" else "Tap a video to play:"
+                                  statusText.text = if (result.first.isEmpty()) {
+                                      "No results (${result.second}). Check internet or try another term."
+                                  } else {
+                                      "Tap a video to play:"
+                                  }
                               }
                           }
                       }
                   }
 
-                  searchBtn.setOnClickListener { doSearch() }
+                  searchBtn.setOnClickListener { doSearchOrPlay() }
                   searchInput.setOnEditorActionListener { _, actionId, _ ->
-                      if (actionId == EditorInfo.IME_ACTION_SEARCH) { doSearch(); true } else false
+                      if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                          doSearchOrPlay()
+                          true
+                      } else false
                   }
 
                   resultsList.setOnItemClickListener { _, _, pos, _ ->
-                      loadAndPlay(videoUrls[pos], videoTitles[pos])
+                      playVideoFromUrl(videoUrls[pos], videoDisplayTitles[pos])
                   }
               }
 
-              override fun onStop() {
-                  super.onStop()
-                  if (!bgAudioEnabled) {
-                      wasPlayingBeforeStop = player.isPlaying
-                      player.pause()
+              private fun getPrefs() = getSharedPreferences("StudyTubePrefs", Context.MODE_PRIVATE)
+
+              private fun getParentPin(): String? = getPrefs().getString("parent_pin", null)
+
+              private fun setParentPin(pin: String) {
+                  getPrefs().edit().putString("parent_pin", pin).apply()
+              }
+
+              private fun getBlockedChannels(): MutableList<String> {
+                  val raw = getPrefs().getString("blocked_channels", "[]") ?: "[]"
+                  val list = mutableListOf<String>()
+                  try {
+                      val arr = JSONArray(raw)
+                      for (i in 0 until arr.length()) {
+                          val ch = arr.optString(i, "").trim()
+                          if (ch.isNotEmpty()) list.add(ch)
+                      }
+                  } catch (_: Exception) {}
+                  return list
+              }
+
+              private fun saveBlockedChannels(list: List<String>) {
+                  val arr = JSONArray()
+                  for (ch in list) {
+                      if (ch.trim().isNotEmpty()) arr.put(ch.trim())
                   }
+                  getPrefs().edit().putString("blocked_channels", arr.toString()).apply()
               }
 
-              override fun onStart() {
-                  super.onStart()
-                  if (!bgAudioEnabled && wasPlayingBeforeStop) {
-                      player.play()
-                      wasPlayingBeforeStop = false
-                  }
+              private fun isTemporarilyUnlocked(): Boolean {
+                  val until = getPrefs().getLong("unlock_until", 0L)
+                  return until > 0L && System.currentTimeMillis() < until
               }
 
-              private fun getBookmarks(): JSONArray {
-                  val prefs = getSharedPreferences("studytube_bookmarks", Context.MODE_PRIVATE)
-                  val raw = prefs.getString("saved_list", "[]") ?: "[]"
-                  return try { JSONArray(raw) } catch (_: Exception) { JSONArray() }
+              private fun isChannelBlocked(channelName: String): Boolean {
+                  val clean = channelName.trim()
+                  if (clean.isEmpty()) return false
+                  if (isTemporarilyUnlocked()) return false
+                  val blockedList = getBlockedChannels()
+                  return blockedList.any { it.equals(clean, ignoreCase = true) }
               }
 
-              private fun saveBookmarks(arr: JSONArray) {
-                  val prefs = getSharedPreferences("studytube_bookmarks", Context.MODE_PRIVATE)
-                  prefs.edit().putString("saved_list", arr.toString()).apply()
-                  updateSavedCount()
-              }
-
-              private fun isBookmarked(url: String): Boolean {
-                  val arr = getBookmarks()
-                  for (i in 0 until arr.length()) {
-                      if (arr.getJSONObject(i).optString("url") == url) return true
-                  }
-                  return false
-              }
-
-              private fun updateSaveButtonState() {
-                  val url = currentPlayingUrl
-                  if (url != null && isBookmarked(url)) {
-                      saveBtn.text = "Saved ✓"
-                      saveBtn.setBackgroundColor(Color.parseColor("#1B5E20"))
+              private fun updateBlocklistButtonState() {
+                  val until = getPrefs().getLong("unlock_until", 0L)
+                  val now = System.currentTimeMillis()
+                  if (until > 0L && now < until) {
+                      val remSec = (until - now) / 1000L
+                      val mins = remSec / 60L
+                      val secs = remSec % 60L
+                      blocklistBtn.text = String.format("Unlocked (%d:%02d)", mins, secs)
+                      blocklistBtn.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#E65100"))
                   } else {
-                      saveBtn.text = "Save"
-                      saveBtn.setBackgroundColor(Color.parseColor("#272727"))
+                      if (until > 0L) {
+                          // Just expired! Re-lock immediately
+                          getPrefs().edit().putLong("unlock_until", 0L).apply()
+                          val playingChannel = currentChannelName ?: ""
+                          if (playingChannel.isNotEmpty() && isChannelBlocked(playingChannel)) {
+                              player.stop()
+                              player.clearMediaItems()
+                              if (isFullscreen) {
+                                  toggleFullscreen()
+                              }
+                              statusText.text = "15-min unlock ended. Channel '$playingChannel' is blocked again."
+                              Toast.makeText(this, "15 minutes over: '$playingChannel' locked again", Toast.LENGTH_LONG).show()
+                          }
+                      }
+                      val count = getBlockedChannels().size
+                      blocklistBtn.text = if (count > 0) "Blocklist ($count)" else "Blocklist"
+                      blocklistBtn.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#272727"))
                   }
               }
 
-              private fun updateSavedCount() {
-                  val count = getBookmarks().length()
+              private fun makePinEditText(hintText: String): EditText {
+                  return EditText(this).apply {
+                      hint = hintText
+                      inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD
+                      filters = arrayOf(InputFilter.LengthFilter(4))
+                      textSize = 18f
+                  }
+              }
+
+              private fun handleBlocklistButtonClick() {
+                  val savedPin = getParentPin()
+                  if (savedPin.isNullOrEmpty()) {
+                      showCreatePinDialog()
+                  } else {
+                      showEnterPinDialog(savedPin)
+                  }
+              }
+              private fun showCreatePinDialog() {
+                  val container = LinearLayout(this).apply {
+                      orientation = LinearLayout.VERTICAL
+                      setPadding(48, 24, 48, 8)
+                  }
+                  val pinInput1 = makePinEditText("Enter new 4-digit Parent PIN")
+                  val pinInput2 = makePinEditText("Confirm 4-digit Parent PIN")
+                  container.addView(pinInput1)
+                  container.addView(pinInput2)
+
+                  AlertDialog.Builder(this)
+                      .setTitle("Set Parent 4-Digit PIN")
+                      .setMessage("Only parents with this PIN can edit blocked channels or unlock them for 15 minutes.")
+                      .setView(container)
+                      .setPositiveButton("Save PIN") { _, _ ->
+                          val p1 = pinInput1.text.toString().trim()
+                          val p2 = pinInput2.text.toString().trim()
+                          if (p1.length != 4 || !p1.all { it.isDigit() }) {
+                              Toast.makeText(this, "PIN must be exactly 4 digits", Toast.LENGTH_SHORT).show()
+                          } else if (p1 != p2) {
+                              Toast.makeText(this, "PINs did not match. Try again.", Toast.LENGTH_SHORT).show()
+                          } else {
+                              setParentPin(p1)
+                              Toast.makeText(this, "Parent PIN saved!", Toast.LENGTH_SHORT).show()
+                              showManageBlocklistDialog()
+                          }
+                      }
+                      .setNegativeButton("Cancel", null)
+                      .show()
+              }
+
+              private fun showEnterPinDialog(savedPin: String) {
+                  val container = LinearLayout(this).apply {
+                      orientation = LinearLayout.VERTICAL
+                      setPadding(48, 24, 48, 8)
+                  }
+                  val pinInput = makePinEditText("Enter 4-digit Parent PIN")
+                  container.addView(pinInput)
+
+                  AlertDialog.Builder(this)
+                      .setTitle("Parent PIN Required")
+                      .setMessage("Enter your 4-digit Parent PIN to unlock blocked channels for 15 minutes or edit the blocklist.")
+                      .setView(container)
+                      .setPositiveButton("Unlock 15 Min") { _, _ ->
+                          if (pinInput.text.toString().trim() == savedPin) {
+                              val unlockUntil = System.currentTimeMillis() + 15L * 60L * 1000L
+                              getPrefs().edit().putLong("unlock_until", unlockUntil).apply()
+                              updateBlocklistButtonState()
+                              Toast.makeText(this, "Blocked channels unlocked for 15 minutes!", Toast.LENGTH_LONG).show()
+                          } else {
+                              Toast.makeText(this, "Incorrect Parent PIN", Toast.LENGTH_SHORT).show()
+                          }
+                      }
+                      .setNeutralButton("Manage Blocklist") { _, _ ->
+                          if (pinInput.text.toString().trim() == savedPin) {
+                              showManageBlocklistDialog()
+                          } else {
+                              Toast.makeText(this, "Incorrect Parent PIN", Toast.LENGTH_SHORT).show()
+                          }
+                      }
+                      .setNegativeButton("Cancel", null)
+                      .show()
+              }
+
+              private fun showManageBlocklistDialog() {
+                  val blocked = getBlockedChannels()
+                  val container = LinearLayout(this).apply {
+                      orientation = LinearLayout.VERTICAL
+                      setPadding(48, 20, 48, 8)
+                  }
+
+                  val channelInput = EditText(this).apply {
+                      hint = "Exact channel name (e.g. CarryMinati)"
+                      inputType = InputType.TYPE_CLASS_TEXT
+                      singleLine = true
+                  }
+                  container.addView(channelInput)
+
+                  val helperNote = TextView(this).apply {
+                      text = if (blocked.isEmpty()) {
+                          "
+No channels blocked yet. Type an exact channel name above and tap Add."
+                      } else {
+                          "
+Blocked Channels (${blocked.size}) — tap Remove next to any channel:"
+                      }
+                      textSize = 13f
+                  }
+                  container.addView(helperNote)
+
+                  for (ch in blocked) {
+                      val row = LinearLayout(this).apply {
+                          orientation = LinearLayout.HORIZONTAL
+                          setPadding(0, 8, 0, 8)
+                      }
+                      val label = TextView(this).apply {
+                          text = "• $ch"
+                          layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+                          textSize = 15f
+                      }
+                      val removeBtn = Button(this).apply {
+                          text = "Remove"
+                          setOnClickListener {
+                              val updated = getBlockedChannels()
+                              updated.removeAll { it.equals(ch, ignoreCase = true) }
+                              saveBlockedChannels(updated)
+                              updateBlocklistButtonState()
+                              Toast.makeText(this@MainActivity, "Removed '$ch'", Toast.LENGTH_SHORT).show()
+                          }
+                      }
+                      row.addView(label)
+                      row.addView(removeBtn)
+                      container.addView(row)
+                  }
+
+                  val builder = AlertDialog.Builder(this)
+                      .setTitle("Parent Blocklist Manager")
+                      .setView(container)
+                      .setPositiveButton("Add Channel") { _, _ ->
+                          val newCh = channelInput.text.toString().trim()
+                          if (newCh.isNotEmpty()) {
+                              val updated = getBlockedChannels()
+                              if (updated.none { it.equals(newCh, ignoreCase = true) }) {
+                                  updated.add(newCh)
+                                  saveBlockedChannels(updated)
+                                  updateBlocklistButtonState()
+                                  // Immediately stop if currently playing that channel and locked
+                                  val playingCh = currentChannelName ?: ""
+                                  if (playingCh.isNotEmpty() && isChannelBlocked(playingCh)) {
+                                      player.stop()
+                                      player.clearMediaItems()
+                                      statusText.text = "Channel '$playingCh' is blocked."
+                                  }
+                                  Toast.makeText(this, "Blocked '$newCh'", Toast.LENGTH_SHORT).show()
+                              } else {
+                                  Toast.makeText(this, "'$newCh' is already blocked", Toast.LENGTH_SHORT).show()
+                              }
+                          }
+                      }
+                      .setNegativeButton("Done", null)
+
+                  if (isTemporarilyUnlocked()) {
+                      builder.setNeutralButton("Lock Now") { _, _ ->
+                          getPrefs().edit().putLong("unlock_until", 0L).apply()
+                          updateBlocklistButtonState()
+                          Toast.makeText(this, "Blocklist locked immediately", Toast.LENGTH_SHORT).show()
+                      }
+                  } else {
+                      builder.setNeutralButton("Change PIN") { _, _ ->
+                          showCreatePinDialog()
+                      }
+                  }
+
+                  builder.show()
+              }
+
+              private fun getSavedVideos(): MutableList<SavedVideo> {
+                  val raw = getPrefs().getString("saved_videos", "[]") ?: "[]"
+                  val list = mutableListOf<SavedVideo>()
+                  try {
+                      val arr = JSONArray(raw)
+                      for (i in 0 until arr.length()) {
+                          val obj = arr.getJSONObject(i)
+                          list.add(
+                              SavedVideo(
+                                  obj.getString("url"),
+                                  obj.getString("title"),
+                                  obj.optString("channelName", "")
+                              )
+                          )
+                      }
+                  } catch (_: Exception) {}
+                  return list
+              }
+
+              private fun persistSavedVideos(list: List<SavedVideo>) {
+                  val arr = JSONArray()
+                  for (item in list) {
+                      val obj = JSONObject()
+                      obj.put("url", item.url)
+                      obj.put("title", item.title)
+                      obj.put("channelName", item.channelName)
+                      arr.put(obj)
+                  }
+                  getPrefs().edit().putString("saved_videos", arr.toString()).apply()
+                  updateSavedCountButton()
+              }
+
+              private fun updateSavedCountButton() {
+                  val count = getSavedVideos().size
                   savedListBtn.text = "Saved ($count)"
               }
 
-              private fun toggleBookmark(url: String, title: String) {
-                  val arr = getBookmarks()
-                  val newArr = JSONArray()
-                  var removed = false
-                  for (i in 0 until arr.length()) {
-                      val obj = arr.getJSONObject(i)
-                      if (obj.optString("url") == url) {
-                          removed = true
-                      } else {
-                          newArr.put(obj)
-                      }
+              private fun saveCurrentVideo(url: String, title: String, channelName: String) {
+                  val list = getSavedVideos()
+                  if (list.any { it.url == url }) {
+                      Toast.makeText(this, "Already in Saved list", Toast.LENGTH_SHORT).show()
+                      return
                   }
-                  if (!removed) {
-                      val item = JSONObject()
-                      item.put("url", url)
-                      item.put("title", title)
-                      newArr.put(item)
-                      Toast.makeText(this, "Saved to bookmarks", Toast.LENGTH_SHORT).show()
-                  } else {
-                      Toast.makeText(this, "Removed from bookmarks", Toast.LENGTH_SHORT).show()
-                  }
-                  saveBookmarks(newArr)
-                  updateSaveButtonState()
+                  list.add(0, SavedVideo(url, title, channelName))
+                  persistSavedVideos(list)
+                  saveBtn.text = "Saved ✓"
+                  Toast.makeText(this, "Video saved!", Toast.LENGTH_SHORT).show()
               }
 
               private fun showSavedVideosDialog() {
-                  val arr = getBookmarks()
-                  if (arr.length() == 0) {
-                      Toast.makeText(this, "No saved videos yet. Play a video and tap Save!", Toast.LENGTH_SHORT).show()
+                  val list = getSavedVideos()
+                  if (list.isEmpty()) {
+                      Toast.makeText(this, "No saved videos yet. Tap Save while watching a video.", Toast.LENGTH_SHORT).show()
                       return
                   }
-                  val titles = Array(arr.length()) { i -> arr.getJSONObject(i).optString("title", "Video") }
+
+                  val titles = list.map {
+                      if (it.channelName.isNotEmpty()) "${it.title} • ${it.channelName}" else it.title
+                  }.toTypedArray()
+
                   AlertDialog.Builder(this)
-                      .setTitle("Saved Study Videos (${arr.length()})")
+                      .setTitle("Saved Lectures (${list.size})")
                       .setItems(titles) { _, which ->
-                          val obj = arr.getJSONObject(which)
-                          loadAndPlay(obj.getString("url"), obj.getString("title"))
+                          val chosen = list[which]
+                          if (chosen.channelName.isNotEmpty() && isChannelBlocked(chosen.channelName)) {
+                              statusText.text = "Blocked channel: ${chosen.channelName}. Tap Blocklist for Parent PIN."
+                              Toast.makeText(this, "Channel '${chosen.channelName}' is blocked by Parent PIN", Toast.LENGTH_LONG).show()
+                          } else {
+                              playVideoFromUrl(chosen.url, chosen.title)
+                          }
                       }
                       .setNeutralButton("Delete One") { _, _ ->
-                          AlertDialog.Builder(this)
-                              .setTitle("Tap a video to delete")
-                              .setItems(titles) { _, delIdx ->
-                                  val updated = JSONArray()
-                                  for (i in 0 until arr.length()) {
-                                      if (i != delIdx) updated.put(arr.getJSONObject(i))
-                                  }
-                                  saveBookmarks(updated)
-                                  updateSaveButtonState()
-                                  Toast.makeText(this, "Deleted from saved list", Toast.LENGTH_SHORT).show()
-                              }
-                              .setNegativeButton("Cancel", null)
-                              .show()
+                          showDeleteSavedDialog(list)
                       }
                       .setNegativeButton("Close", null)
                       .show()
               }
 
-              private fun toggleFullscreen() {
-                  isFullscreen = !isFullscreen
-                  val controller = WindowCompat.getInsetsController(window, window.decorView)
-                  val dp12 = (12 * resources.displayMetrics.density).toInt()
-                  val dp220 = (220 * resources.displayMetrics.density).toInt()
+              private fun showDeleteSavedDialog(list: MutableList<SavedVideo>) {
+                  val titles = list.map { it.title }.toTypedArray()
+                  AlertDialog.Builder(this)
+                      .setTitle("Tap a saved video to remove")
+                      .setItems(titles) { _, which ->
+                          val removed = list.removeAt(which)
+                          persistSavedVideos(list)
+                          Toast.makeText(this, "Removed: ${removed.title}", Toast.LENGTH_SHORT).show()
+                      }
+                      .setNegativeButton("Cancel", null)
+                      .show()
+              }
 
-                  if (isFullscreen) {
+              private fun toggleFullscreen() {
+                  val controller = WindowCompat.getInsetsController(window, window.decorView)
+                  if (!isFullscreen) {
+                      isFullscreen = true
                       requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-                      controller.hide(WindowInsetsCompat.Type.systemBars())
-                      controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
                       searchBarContainer.visibility = View.GONE
                       controlsScroll.visibility = View.GONE
                       statusText.visibility = View.GONE
                       resultsList.visibility = View.GONE
                       rootLayout.setPadding(0, 0, 0, 0)
                       playerView.layoutParams = LinearLayout.LayoutParams(
-                          ViewGroup.LayoutParams.MATCH_PARENT,
-                          ViewGroup.LayoutParams.MATCH_PARENT
+                          LinearLayout.LayoutParams.MATCH_PARENT,
+                          LinearLayout.LayoutParams.MATCH_PARENT
                       )
+                      window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                      controller.hide(WindowInsetsCompat.Type.systemBars())
+                      controller.systemBarsBehavior =
+                          WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
                   } else {
+                      isFullscreen = false
                       requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-                      controller.show(WindowInsetsCompat.Type.systemBars())
                       searchBarContainer.visibility = View.VISIBLE
                       controlsScroll.visibility = View.VISIBLE
                       statusText.visibility = View.VISIBLE
                       resultsList.visibility = View.VISIBLE
-                      rootLayout.setPadding(dp12, dp12, dp12, dp12)
+                      val padPx = (12 * resources.displayMetrics.density).toInt()
+                      rootLayout.setPadding(padPx, padPx, padPx, padPx)
+                      val heightPx = (220 * resources.displayMetrics.density).toInt()
                       playerView.layoutParams = LinearLayout.LayoutParams(
-                          ViewGroup.LayoutParams.MATCH_PARENT,
-                          dp220
+                          LinearLayout.LayoutParams.MATCH_PARENT,
+                          heightPx
                       )
+                      controller.show(WindowInsetsCompat.Type.systemBars())
+                  }
+              }
+              private fun playVideoFromUrl(url: String, fallbackTitle: String) {
+                  statusText.text = "Loading stream..."
+                  scope.launch {
+                      val result = fetchStreamsWithRetry(url)
+                      val bundle = result.first
+                      if (bundle != null) {
+                          if (isChannelBlocked(bundle.channelName)) {
+                              statusText.text = "Blocked channel: ${bundle.channelName}. Tap Blocklist to unlock with Parent PIN."
+                              Toast.makeText(
+                                  this@MainActivity,
+                                  "Channel '${bundle.channelName}' is blocked by Parent PIN",
+                                  Toast.LENGTH_LONG
+                              ).show()
+                              return@launch
+                          }
+                          currentBundle = bundle
+                          val finalTitle = bundle.title.ifEmpty { fallbackTitle }
+                          currentVideoUrl = url
+                          currentVideoTitle = finalTitle
+                          currentChannelName = bundle.channelName
+                          saveBtn.text = if (getSavedVideos().any { it.url == url }) "Saved ✓" else "Save"
+                          statusText.text = "Playing: $finalTitle (${bundle.channelName})"
+                          startPlaybackAtPreferredQuality(bundle, keepPosition = false)
+                      } else {
+                          statusText.text = "Stream error: ${result.second}"
+                      }
+                  }
+              }
+
+              private fun startPlaybackAtPreferredQuality(bundle: VideoStreamsBundle, keepPosition: Boolean) {
+                  val savedPosition = if (keepPosition) player.currentPosition else 0L
+                  val dataSourceFactory = DefaultHttpDataSource.Factory()
+                      .setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36")
+
+                  val chosenVideo = pickBestStreamForHeight(bundle.videoStreams, preferredHeight)
+
+                  if (chosenVideo != null && bundle.bestAudioUrl != null) {
+                      val videoSource = ProgressiveMediaSource.Factory(dataSourceFactory)
+                          .createMediaSource(MediaItem.fromUri(Uri.parse(chosenVideo.content)))
+                      val audioSource = ProgressiveMediaSource.Factory(dataSourceFactory)
+                          .createMediaSource(MediaItem.fromUri(Uri.parse(bundle.bestAudioUrl)))
+                      player.setMediaSource(MergingMediaSource(videoSource, audioSource))
+                      qualityBtn.text = "Quality: ${chosenVideo.height}p"
+                  } else if (chosenVideo != null && !chosenVideo.isVideoOnly) {
+                      player.setMediaItem(MediaItem.fromUri(Uri.parse(chosenVideo.content)))
+                      qualityBtn.text = "Quality: ${chosenVideo.height}p"
+                  } else if (!bundle.hlsUrl.isNullOrEmpty()) {
+                      player.setMediaItem(MediaItem.fromUri(Uri.parse(bundle.hlsUrl)))
+                      qualityBtn.text = "Quality: Auto"
+                  } else {
+                      statusText.text = "No compatible playable stream found."
+                      return
+                  }
+
+                  player.prepare()
+                  if (keepPosition && savedPosition > 0L) {
+                      player.seekTo(savedPosition)
+                  }
+                  player.playbackParameters = PlaybackParameters(currentSpeed)
+                  player.play()
+              }
+
+              private fun pickBestStreamForHeight(streams: List<VideoStream>, targetHeight: Int): VideoStream? {
+                  if (streams.isEmpty()) return null
+                  val matching = streams.filter { it.height <= targetHeight }
+                  return if (matching.isNotEmpty()) {
+                      matching.maxByOrNull { it.height }
+                  } else {
+                      streams.minByOrNull { it.height }
                   }
               }
 
               private fun showQualityDialog() {
-                  val resSet = linkedSetOf<String>()
-                  currentVideoStreams.forEach { it.resolution?.let { r -> resSet.add(r) } }
-                  currentMuxedStreams.forEach { it.resolution?.let { r -> resSet.add(r) } }
-
-                  if (resSet.isEmpty()) {
-                      val defaults = arrayOf("144p", "240p", "360p", "480p", "720p", "1080p")
+                  val bundle = currentBundle
+                  if (bundle == null || bundle.videoStreams.isEmpty()) {
+                      val presets = arrayOf("144p", "240p", "360p", "480p", "720p")
+                      val presetValues = intArrayOf(144, 240, 360, 480, 720)
                       AlertDialog.Builder(this)
                           .setTitle("Default Video Quality")
-                          .setItems(defaults) { _, which ->
-                              preferredResolution = defaults[which]
-                              qualityBtn.text = "Quality: $preferredResolution"
+                          .setItems(presets) { _, which ->
+                              preferredHeight = presetValues[which]
+                              qualityBtn.text = "Quality: ${preferredHeight}p"
                           }
                           .show()
                       return
                   }
 
-                  val options = resSet.sortedBy { it.filter { ch -> ch.isDigit() }.toIntOrNull() ?: 9999 }.toTypedArray()
+                  val availableHeights = bundle.videoStreams
+                      .map { it.height }
+                      .filter { it > 0 }
+                      .distinct()
+                      .sorted()
+
+                  val labels = availableHeights.map { "${it}p" }.toTypedArray()
                   AlertDialog.Builder(this)
                       .setTitle("Select Video Quality")
-                      .setItems(options) { _, which ->
-                          preferredResolution = options[which]
-                          val pos = player.currentPosition
-                          val playWhenReady = player.playWhenReady
-                          playSelectedQuality(pos, playWhenReady)
+                      .setItems(labels) { _, which ->
+                          preferredHeight = availableHeights[which]
+                          startPlaybackAtPreferredQuality(bundle, keepPosition = true)
+                          Toast.makeText(this, "Switched to ${preferredHeight}p", Toast.LENGTH_SHORT).show()
                       }
                       .show()
-                  }
-
-              private fun playSelectedQuality(seekPos: Long = 0L, autoPlay: Boolean = true) {
-                  val dataSourceFactory = DefaultHttpDataSource.Factory()
-                      .setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36")
-
-                  val targetNum = preferredResolution.filter { it.isDigit() }.toIntOrNull() ?: 360
-
-                  if (currentVideoStreams.isNotEmpty() && !currentAudioUrl.isNullOrEmpty()) {
-                      val chosenVideo = currentVideoStreams.minByOrNull {
-                          kotlin.math.abs((it.resolution?.filter { c -> c.isDigit() }?.toIntOrNull() ?: 360) - targetNum)
-                      } ?: currentVideoStreams.first()
-
-                      val actualRes = chosenVideo.resolution ?: preferredResolution
-                      qualityBtn.text = "Quality: $actualRes"
-
-                      val vSrc = ProgressiveMediaSource.Factory(dataSourceFactory).createMediaSource(MediaItem.fromUri(Uri.parse(chosenVideo.content)))
-                      val aSrc = ProgressiveMediaSource.Factory(dataSourceFactory).createMediaSource(MediaItem.fromUri(Uri.parse(currentAudioUrl)))
-                      player.setMediaSource(MergingMediaSource(vSrc, aSrc))
-                  } else if (currentMuxedStreams.isNotEmpty()) {
-                      val chosenMuxed = currentMuxedStreams.minByOrNull {
-                          kotlin.math.abs((it.resolution?.filter { c -> c.isDigit() }?.toIntOrNull() ?: 360) - targetNum)
-                      } ?: currentMuxedStreams.first()
-
-                      val actualRes = chosenMuxed.resolution ?: preferredResolution
-                      qualityBtn.text = "Quality: $actualRes"
-
-                      val mSrc = ProgressiveMediaSource.Factory(dataSourceFactory).createMediaSource(MediaItem.fromUri(Uri.parse(chosenMuxed.content)))
-                      player.setMediaSource(mSrc)
-                  }
-
-                  player.prepare()
-                  if (seekPos > 0L) player.seekTo(seekPos)
-                  player.playbackParameters = PlaybackParameters(currentSpeed)
-                  player.playWhenReady = autoPlay
               }
 
-              private fun loadAndPlay(url: String, title: String) {
-                  statusText.text = "Loading stream..."
-                  scope.launch {
-                      val (streamData, err) = getStreamInfoWithRetry(url)
-                      if (streamData != null) {
-                          currentVideoStreams = streamData.first
-                          currentAudioUrl = streamData.second
-                          currentMuxedStreams = streamData.third
-                          currentPlayingUrl = url
-                          currentPlayingTitle = title
-                          updateSaveButtonState()
-                          statusText.text = "Playing: $title"
-                          playSelectedQuality(0L, true)
-                      } else {
-                          statusText.text = "Stream error: $err"
-                      }
-                  }
-              }
-
-              private suspend fun searchVideos(query: String): Pair<List<Pair<String, String>>, String> = withContext(Dispatchers.IO) {
-                  try {
-                      val extractor = ServiceList.YouTube.getSearchExtractor(query)
-                      extractor.fetchPage()
-                      val list = mutableListOf<Pair<String, String>>()
-                      for (item in extractor.initialPage.items) {
-                          if (item is StreamInfoItem) {
-                              list.add(item.url to item.name)
-                          }
-                      }
-                      Pair(list, "")
-                  } catch (e: Exception) {
-                      Pair(emptyList(), e.message ?: "Search failed")
-                  }
-              }
-
-              private suspend fun getStreamInfoWithRetry(url: String): Pair<Triple<List<VideoStream>, String?, List<VideoStream>>?, String> = withContext(Dispatchers.IO) {
-                  var lastErr = "No playable stream"
-                  for (attempt in 1..3) {
-                      try {
-                          if (attempt > 1) {
-                              NewPipe.init(OkHttpDownloader())
+              private suspend fun searchYouTube(query: String): Pair<List<Pair<String, String>>, String> =
+                  withContext(Dispatchers.IO) {
+                      for (attempt in 1..2) {
+                          try {
+                              val extractor = ServiceList.YouTube.getSearchExtractor(query)
+                              extractor.fetchPage()
+                              val list = mutableListOf<Pair<String, String>>()
+                              for (item in extractor.initialPage.items) {
+                                  if (item is StreamInfoItem) {
+                                      val ch = item.uploaderName ?: ""
+                                      if (!isChannelBlocked(ch)) {
+                                          val display = if (ch.isNotEmpty()) "${item.name} • $ch" else item.name
+                                          list.add(item.url to display)
+                                      }
+                                  }
+                              }
+                              return@withContext Pair(list, "OK")
+                          } catch (e: Exception) {
+                              if (attempt == 2) {
+                                  return@withContext Pair(emptyList(), e.message ?: "Error")
+                              }
+                              try {
+                                  NewPipe.init(OkHttpNewPipeDownloader())
+                              } catch (_: Exception) {}
                               delay(400)
                           }
-                          val info = StreamInfo.getInfo(ServiceList.YouTube, url)
-                          val videoStreams = info.videoOnlyStreams.filter { it.content.isNotEmpty() }
-                          val audio = info.audioStreams.maxByOrNull { it.averageBitrate }?.content
-                          val muxedStreams = info.videoStreams.filter { it.content.isNotEmpty() }
-
-                          if ((videoStreams.isNotEmpty() && !audio.isNullOrEmpty()) || muxedStreams.isNotEmpty()) {
-                              return@withContext Pair(Triple(videoStreams, audio, muxedStreams), "")
-                          }
-                      } catch (e: Exception) {
-                          lastErr = e.message ?: "Stream error"
                       }
+                      Pair(emptyList(), "Unknown error")
                   }
-                  Pair(null, lastErr)
-              }
+
+              private suspend fun fetchStreamsWithRetry(url: String): Pair<VideoStreamsBundle?, String> =
+                  withContext(Dispatchers.IO) {
+                      var lastError = "Unknown error"
+                      for (attempt in 1..3) {
+                          try {
+                              val info = StreamInfo.getInfo(ServiceList.YouTube, url)
+                              val title = info.name ?: "YouTube Video"
+                              val channelName = info.uploaderName ?: ""
+                              val audioStreams = info.audioStreams
+                              val bestAudio = audioStreams
+                                  .filter { it.format?.suffix == "m4a" || it.format?.mimeType?.contains("mp4") == true }
+                                  .maxByOrNull { it.averageBitrate }
+                                  ?: audioStreams.maxByOrNull { it.averageBitrate }
+
+                              val allVideos = (info.videoOnlyStreams + info.videoStreams)
+                                  .filter { it.format?.suffix == "mp4" || it.format?.mimeType?.contains("mp4") == true }
+                                  .ifEmpty { info.videoOnlyStreams + info.videoStreams }
+
+                              val bundle = VideoStreamsBundle(
+                                  title = title,
+                                  channelName = channelName,
+                                  videoStreams = allVideos,
+                                  bestAudioUrl = bestAudio?.content,
+                                  hlsUrl = info.hlsUrl
+                              )
+                              return@withContext Pair(bundle, "OK")
+                          } catch (e: Exception) {
+                              lastError = e.message ?: "Error"
+                              try {
+                                  NewPipe.init(OkHttpNewPipeDownloader())
+                              } catch (_: Exception) {}
+                              delay(600L * attempt)
+                          }
+                      }
+                      Pair(null, lastError)
+                  }
 
               override fun onDestroy() {
                   super.onDestroy()
+                  unlockHandler.removeCallbacks(unlockCheckRunnable)
                   scope.cancel()
                   player.release()
               }
@@ -731,9 +1132,13 @@ jobs:
           gradle wrapper --gradle-version 8.5
           chmod +x gradlew
           ./gradlew assembleDebug
+
       - name: Upload StudyTube APK
         uses: actions/upload-artifact@v4
         with:
           name: StudyTube-APK
           path: app/build/outputs/apk/debug/app-debug.apk
+
+
+
           
