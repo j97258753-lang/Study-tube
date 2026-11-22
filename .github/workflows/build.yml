@@ -355,6 +355,7 @@ jobs:
                               }
                           }
                       }
+
                       if (method.equals("POST", ignoreCase = true)) {
                           val body = (dataToSend ?: ByteArray(0)).toRequestBody(null)
                           reqBuilder.post(body)
@@ -667,6 +668,7 @@ jobs:
                       showEnterPinDialog(savedPin)
                   }
               }
+
               private fun showCreatePinDialog() {
                   val container = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
@@ -949,6 +951,7 @@ Blocked Channels (${blocked.size}) — tap Remove next to any channel:"
                       controller.show(WindowInsetsCompat.Type.systemBars())
                   }
               }
+
               private fun playVideoFromUrl(url: String, fallbackTitle: String) {
                   statusText.text = "Loading stream..."
                   scope.launch {
@@ -1138,7 +1141,3 @@ Blocked Channels (${blocked.size}) — tap Remove next to any channel:"
         with:
           name: StudyTube-APK
           path: app/build/outputs/apk/debug/app-debug.apk
-
-
-
-          
